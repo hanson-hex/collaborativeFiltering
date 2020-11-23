@@ -38,7 +38,6 @@ class UserBasedCF:
                 if i not in self.item_users:
                     self.item_users[i] = set()
                 self.item_users[i].add(user)
-        print('user', self.item_users)
         #计算用户-用户共现矩阵
         C = dict()  #用户-用户共现矩阵
         N = dict()  #用户产生行为的物品个数
@@ -61,6 +60,33 @@ class UserBasedCF:
                 self.W[u][v] = cuv / math.sqrt(N[u] * N[v])
         return self.W, C, N
 
+    def average_rating(self, user):
+        average = 0
+        for u in self.test[user].keys():
+            average += self.test[user][u]
+        average = average * 1.0 / len(self.test[user].keys())
+        return average 
+
+    def getRecommendations(self, u, user, K):
+        pred = {}
+        average_u_rate = self.average_rating(user)
+        sumUserSim = 0
+        action_item = self.train[u].keys()     #用户user产生过行为的item
+        for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
+            average_n_rate = self.average_rating(v)
+            # 遍历前K个与user最相关的用户
+            # i：用户v有过行为的物品i
+            # rvi：用户v对物品i的打分
+            for i,rvi in self.train[v].items():
+                if i in action_item:
+                    continue
+                pred.setdefault(i,0)
+                pred[i] += wuv * (rvi - average_n_rate)
+            sumUserSim += wuv
+        for i, rating in pred.items():
+            pred[i] = average_u_rate + (pred[i]*1.0) / sumUserSim  
+        return pred
+
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
         rank = dict()
@@ -68,7 +94,7 @@ class UserBasedCF:
         # v: 用户v
         # wuv：用户u和用户v的相似度
         for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
-            #遍历前K个与user最相关的用户
+            # 遍历前K个与user最相关的用户
             # i：用户v有过行为的物品i
             # rvi：用户v对物品i的打分
             for i,rvi in self.train[v].items():
@@ -100,3 +126,5 @@ if __name__ == '__main__':
   ucf = UserBasedCF(path)
   W, C, N = ucf.UserSimilarity()
   print(W)
+  print(C)
+  print(N)
