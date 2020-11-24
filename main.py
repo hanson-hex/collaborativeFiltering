@@ -1,11 +1,15 @@
 import math 
 import random
 import os
+from pandas import DataFrame
+import datetime
 
 class UserBasedCF:
     def __init__(self, path):
         self.train = {} #用户-物品的评分表 训练集
         self.test = {} #用户-物品的评分表 测试集
+        self.pred = {} # // 预测评分
+        self.records = []
         self.generate_dataset(path)
 
     def loadfile(self, path):
@@ -14,8 +18,22 @@ class UserBasedCF:
                 yield line.strip('\r\n')
 
     
-    def generate_dataset(self, path, pivot=0.7):
-        #读取文件，并生成用户-物品的评分表和测试集
+    def getRecord(self):
+        # rui:是用户u对物品i的实际评分，pui是算法预测出来的用户u对物品i的评分
+        test = DataFrame(self.test).T.fillna(0)
+        print(test)
+        print('------')
+        pred = DataFrame(self.pred).T.fillna(0)
+        print(pred)
+        for u, items in self.test.items():
+            for i in items.keys():
+                print(u, i)
+                print(items[i]) 
+                print(self.pred[u][i])
+                self.records.append([u,i, items[i], self.pred[u][i]])
+
+    def generate_dataset(self, path, pivot=0.9):
+        # 读取文件，并生成用户-物品的评分表和测试集
         i = 0
         for line in self.loadfile(path):
             user, movie, rating, _ = line.split('::')
@@ -28,7 +46,6 @@ class UserBasedCF:
             else:
                 self.test.setdefault(user, {})
                 self.test[user][movie] = int(rating)
-
 
     def UserSimilarity(self):
         #建立物品-用户的倒排表
@@ -62,30 +79,32 @@ class UserBasedCF:
 
     def average_rating(self, user):
         average = 0
-        for u in self.test[user].keys():
-            average += self.test[user][u]
-        average = average * 1.0 / len(self.test[user].keys())
+        for u in self.train[user].keys():
+            average += self.train[user][u]
+        average = average * 1.0 / len(self.train[user].keys())
         return average 
 
-    def getRecommendations(self, u, user, K):
-        pred = {}
-        average_u_rate = self.average_rating(user)
-        sumUserSim = 0
-        action_item = self.train[u].keys()     #用户user产生过行为的item
-        for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
-            average_n_rate = self.average_rating(v)
-            # 遍历前K个与user最相关的用户
-            # i：用户v有过行为的物品i
-            # rvi：用户v对物品i的打分
-            for i,rvi in self.train[v].items():
-                if i in action_item:
-                    continue
-                pred.setdefault(i,0)
-                pred[i] += wuv * (rvi - average_n_rate)
-            sumUserSim += wuv
-        for i, rating in pred.items():
-            pred[i] = average_u_rate + (pred[i]*1.0) / sumUserSim  
-        return pred
+    def getAllUserPredition(self, K):
+        self.pred = {}
+        for u, items in self.train.items():
+            self.pred.setdefault(u, {})
+            average_u_rate = self.average_rating(u)
+            sumUserSim = 0
+            # 用户user产生过行为的item
+            action_item = self.train[u].keys()
+            for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
+                average_n_rate = self.average_rating(v)
+                # 遍历前K个与user最相关的用户
+                # i：用户v有过行为的物品i
+                # rvi：用户v对物品i的打分
+                for i,rvi in self.train[v].items():
+                    if i in action_item:
+                        continue
+                    self.pred[u].setdefault(i,0)
+                    self.pred[u][i] += wuv * (rvi - average_n_rate)
+                sumUserSim += wuv
+            for i, rating in self.pred[u].items():
+                self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim  
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -118,13 +137,27 @@ class UserBasedCF:
             recall += len(items)
             precision += nitem
         return (hit / (recall * 1.0),hit / (precision * 1.0))
-        
-if __name__ == '__main__':
-  # user, movie, rating, _
-  path = os.path.join('data', 'ratings.dat')
 
+class Evalution:
+    def __init__(self, records):
+        self.records = records
+        # recoids[i] = [u, i rui, pui] 
+
+    def RMSE (self):
+        return math.sqrt(\
+            sum([(rui - pui) * (rui - pui) for u, i , rui, pui in self.records])\
+            / float(len(self.records)))
+
+    def MAE(self):
+          return sum([abs(rui - pui) for u, i, rui, pui in self.records]) / len(self.records)
+
+if __name__ == '__main__':
+  path = os.path.join('data', 'ratingsData.dat')
+  start = datetime.datetime.now()
   ucf = UserBasedCF(path)
   W, C, N = ucf.UserSimilarity()
-  print(W)
-  print(C)
-  print(N)
+  ucf.getAllUserPredition(10)
+  record = ucf.getRecord()
+
+  end = datetime.datetime.now()
+  print((end -start).seconds)

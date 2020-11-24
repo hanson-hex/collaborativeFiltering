@@ -145,7 +145,7 @@ if __name__ == "__main__":
     user_movie, movies = load_data()  
  
     # Calculate user similarity
-    userSim = calUserSim(user_movie)  
+    userSim = calUserSim(user_movie)
  
     # Recommend
     pred = getRecommendations('', user_movie, movies, userSim, 20)  
