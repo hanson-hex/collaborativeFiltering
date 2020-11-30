@@ -99,6 +99,7 @@ class UserBasedCF:
                 # rvi：用户v对物品i的打分
                 for i,rvi in self.train[v].items():
                     if i in action_item:
+                        self.pred[u][i] = rvi
                         continue
                     self.pred[u].setdefault(i,0)
                     self.pred[u][i] += wuv * (rvi - average_n_rate)
