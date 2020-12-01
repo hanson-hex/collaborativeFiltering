@@ -57,9 +57,7 @@ def predict(ratings, similarity, type='user'):
     return pred
 
 # 预测结果
-item_prediction = predict(train_data_matrix, item_similarity, type='item')
 user_prediction = predict(train_data_matrix, user_similarity, type='user')
-print(item_prediction)
 print(user_prediction)
 
 # 评估指标，均方根误差

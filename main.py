@@ -3,6 +3,7 @@ import random
 import os
 from pandas import DataFrame
 import datetime
+from slopeOne import getSlopeOneFilledData
 
 class UserBasedCF:
     def __init__(self, path):
@@ -22,14 +23,10 @@ class UserBasedCF:
         # rui:是用户u对物品i的实际评分，pui是算法预测出来的用户u对物品i的评分
         test = DataFrame(self.test).T.fillna(0)
         print(test)
-        print('------')
         pred = DataFrame(self.pred).T.fillna(0)
         print(pred)
         for u, items in self.test.items():
             for i in items.keys():
-                print(u, i)
-                print(items[i]) 
-                print(self.pred[u][i])
                 self.records.append([u,i, items[i], self.pred[u][i]])
 
     def generate_dataset(self, path, pivot=0.9):
@@ -46,6 +43,59 @@ class UserBasedCF:
             else:
                 self.test.setdefault(user, {})
                 self.test[user][movie] = int(rating)
+        # self.train = getSlopeOneFilledData(self.train)
+
+    def calUserSim(self):  
+    
+        # build inverse table for movie_user
+        movie_user = {}
+        for ukey in self.train.keys():
+            for mkey in self.train[ukey].keys():
+                if mkey not in movie_user:
+                    movie_user[mkey] = []
+                movie_user[mkey].append(ukey)  
+    
+        # calculated co-rated movies between users
+        C = {}
+        for movie, users in movie_user.items():
+            for u in users:
+                C.setdefault(u,{})
+                for n in users:
+                    if u == n:
+                        continue
+                    C[u].setdefault(n,[])
+                    C[u][n].append(movie)  
+    
+        # calculate user similarity (perason correlation)
+        userSim = {}
+        for u in C.keys():  
+    
+            for n in C[u].keys():  
+    
+                userSim.setdefault(u,{})
+                userSim[u].setdefault(n,0)  
+    
+                average_u_rate = self.average_rating(u)
+                average_n_rate = self.average_rating(n)  
+    
+                part1 = 0
+                part2 = 0
+                part3 = 0
+                for m in C[u][n]:  
+
+                    part1 += (self.train[u][m]-average_u_rate)*(self.train[n][m]-average_n_rate)*1.0
+                    part2 += pow(self.train[u][m]-average_u_rate, 2)*1.0
+                    part3 += pow(self.train[n][m]-average_n_rate, 2)*1.0  
+    
+                part2 = math.sqrt(part2)
+                part3 = math.sqrt(part3)
+                if part2 == 0:
+                    part2 = 0.001
+                if part3 == 0:
+                    part3 = 0.001
+                userSim[u][n] = part1 / (part2 * part3)
+        self.W = userSim
+        return userSim
 
     def UserSimilarity(self):
         #建立物品-用户的倒排表
@@ -89,7 +139,7 @@ class UserBasedCF:
         for u, items in self.train.items():
             self.pred.setdefault(u, {})
             average_u_rate = self.average_rating(u)
-            sumUserSim = 0
+            sumUserSim = 0.001
             # 用户user产生过行为的item
             action_item = self.train[u].keys()
             for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
@@ -99,13 +149,12 @@ class UserBasedCF:
                 # rvi：用户v对物品i的打分
                 for i,rvi in self.train[v].items():
                     if i in action_item:
-                        self.pred[u][i] = rvi
                         continue
                     self.pred[u].setdefault(i,0)
                     self.pred[u][i] += wuv * (rvi - average_n_rate)
                 sumUserSim += wuv
             for i, rating in self.pred[u].items():
-                self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim  
+                self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -156,9 +205,10 @@ if __name__ == '__main__':
   path = os.path.join('data', 'ratingsData.dat')
   start = datetime.datetime.now()
   ucf = UserBasedCF(path)
-  W, C, N = ucf.UserSimilarity()
+  W = ucf.calUserSim()
   ucf.getAllUserPredition(10)
   record = ucf.getRecord()
+  print(ucf.records)
 
   end = datetime.datetime.now()
   print((end -start).seconds)

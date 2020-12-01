@@ -10,7 +10,6 @@ class slopOne:
    def __init__(self,data):
        self.frequency={}
        self.deviation={}
-       self.allgood = []
        self.data=data
        self.filledData = {}
 
@@ -26,8 +25,6 @@ class slopOne:
                        self.deviation[item].setdefault(item2,0.0)
                        self.frequency[item][item2]+=1#两个项目的用户数
                        self.deviation[item][item2]+=(rating-rating2)#累加两个评分差值
-                   if item2 not in self.allgood:
-                       self.allgood.append(item2)
 
        for item,ratings in self.deviation.items():
            for item2 in ratings:
@@ -60,7 +57,8 @@ class slopOne:
       #  recommendations.sort(key=lambda a_tuple:a_tuple[1],reverse=True)
        return a
 
-if __name__=='__main__':
+def getSlopeOneFilledData(user_data):
     r= slopOne(user_data)
     r.computeDeviation()
     r.fillZero()
+    return r.filledData
