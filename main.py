@@ -3,14 +3,17 @@ import random
 import os
 from pandas import DataFrame
 import datetime
-from slopeOne import getSlopeOneFilledData
+import json
+
 
 class UserBasedCF:
     def __init__(self, path):
         self.train = {} #用户-物品的评分表 训练集
         self.test = {} #用户-物品的评分表 测试集
+        self.all = {}
         self.pred = {} # // 预测评分
         self.records = []
+        self.movie = []
         self.generate_dataset(path)
 
     def loadfile(self, path):
@@ -22,32 +25,33 @@ class UserBasedCF:
     def getRecord(self):
         # rui:是用户u对物品i的实际评分，pui是算法预测出来的用户u对物品i的评分
         test = DataFrame(self.test).T.fillna(0)
-        print(test)
         pred = DataFrame(self.pred).T.fillna(0)
-        print(pred)
         for u, items in self.test.items():
             for i in items.keys():
-                self.records.append([u,i, items[i], self.pred[u][i]])
+                self.records.append([u,i, items[i], self.pred[u].get(i, self.average_rating(u))])
 
-    def generate_dataset(self, path, pivot=0.9):
+    def generate_dataset(self, path, pivot=0.3):
         # 读取文件，并生成用户-物品的评分表和测试集
         i = 0
         for line in self.loadfile(path):
             user, movie, rating, _ = line.split('::')
             if i <= 10:
                 print('{},{},{},{}'.format(user, movie, rating, _))
-            i += 1
+            i += 1  
+            # self.all.setdefault(user, {})
+            # self.all[user][movie] = int(rating)
+            # if (moive not in self.movie):
+            #     self.movie.append(movie)
             if random.random() < pivot:
                 self.train.setdefault(user, {})
                 self.train[user][movie] = int(rating)
             else:
                 self.test.setdefault(user, {})
                 self.test[user][movie] = int(rating)
-        # self.train = getSlopeOneFilledData(self.train)
 
     def calUserSim(self):  
     
-        # build inverse table for movie_user
+        # 建立物品-用户的倒排表
         movie_user = {}
         for ukey in self.train.keys():
             for mkey in self.train[ukey].keys():
@@ -66,7 +70,7 @@ class UserBasedCF:
                     C[u].setdefault(n,[])
                     C[u][n].append(movie)  
     
-        # calculate user similarity (perason correlation)
+        # 计算用户-用户共现矩
         userSim = {}
         for u in C.keys():  
     
@@ -140,7 +144,7 @@ class UserBasedCF:
             self.pred.setdefault(u, {})
             average_u_rate = self.average_rating(u)
             sumUserSim = 0.001
-            # 用户user产生过行为的item
+            # # 用户user产生过行为的item
             action_item = self.train[u].keys()
             for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
                 average_n_rate = self.average_rating(v)
@@ -150,11 +154,14 @@ class UserBasedCF:
                 for i,rvi in self.train[v].items():
                     if i in action_item:
                         continue
-                    self.pred[u].setdefault(i,0)
+                    self.pred[u].setdefault(i, 0)
                     self.pred[u][i] += wuv * (rvi - average_n_rate)
                 sumUserSim += wuv
+
             for i, rating in self.pred[u].items():
                 self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
+
+
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -203,12 +210,23 @@ class Evalution:
 
 if __name__ == '__main__':
   path = os.path.join('data', 'ratingsData.dat')
-  start = datetime.datetime.now()
   ucf = UserBasedCF(path)
   W = ucf.calUserSim()
   ucf.getAllUserPredition(10)
   record = ucf.getRecord()
-  print(ucf.records)
+  start = datetime.datetime.now()
+  records = {
+      "record": ucf.records
+  }
 
+  with open("./record.json","w") as f:
+     json.dump(records,f, indent=4)
+     print("加载入文件完成...")
+
+#   with open("./record.json",'r') as load_f:
+#      records = json.load(load_f)
+
+  e = Evalution(records["record"])
+  print(e.RMSE())
   end = datetime.datetime.now()
   print((end -start).seconds)
