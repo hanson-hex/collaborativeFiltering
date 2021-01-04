@@ -10,10 +10,8 @@ class UserBasedCF:
     def __init__(self, path):
         self.train = {} #用户-物品的评分表 训练集
         self.test = {} #用户-物品的评分表 测试集
-        self.all = {}
         self.pred = {} # // 预测评分
         self.records = []
-        self.movie = []
         self.generate_dataset(path)
 
     def loadfile(self, path):
@@ -28,7 +26,8 @@ class UserBasedCF:
         pred = DataFrame(self.pred).T.fillna(0)
         for u, items in self.test.items():
             for i in items.keys():
-                self.records.append([u,i, items[i], self.pred[u].get(i, self.average_rating(u))])
+                # self.records.append([u,i, items[i], self.pred[u].get(i, self.average_rating(u))])
+                self.records.append([u,i, items[i], self.pred[u].get(i, 0)])
 
     def generate_dataset(self, path, pivot=0.3):
         # 读取文件，并生成用户-物品的评分表和测试集
@@ -38,10 +37,6 @@ class UserBasedCF:
             if i <= 10:
                 print('{},{},{},{}'.format(user, movie, rating, _))
             i += 1  
-            # self.all.setdefault(user, {})
-            # self.all[user][movie] = int(rating)
-            # if (moive not in self.movie):
-            #     self.movie.append(movie)
             if random.random() < pivot:
                 self.train.setdefault(user, {})
                 self.train[user][movie] = int(rating)
@@ -99,6 +94,8 @@ class UserBasedCF:
                     part3 = 0.001
                 userSim[u][n] = part1 / (part2 * part3)
         self.W = userSim
+        test = DataFrame(userSim).T.fillna(0)
+        print(test)
         return userSim
 
     def UserSimilarity(self):
@@ -143,10 +140,11 @@ class UserBasedCF:
         for u, items in self.train.items():
             self.pred.setdefault(u, {})
             average_u_rate = self.average_rating(u)
-            sumUserSim = 0.001
+            sumUserSim = 0
             # # 用户user产生过行为的item
             action_item = self.train[u].keys()
             for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
+                print(wuv)
                 average_n_rate = self.average_rating(v)
                 # 遍历前K个与user最相关的用户
                 # i：用户v有过行为的物品i
@@ -211,7 +209,7 @@ class Evalution:
 if __name__ == '__main__':
   path = os.path.join('data', 'ratingsData.dat')
   ucf = UserBasedCF(path)
-  W = ucf.calUserSim()
+  W = ucf.UserSimilarity()
   ucf.getAllUserPredition(10)
   record = ucf.getRecord()
   start = datetime.datetime.now()
@@ -219,14 +217,14 @@ if __name__ == '__main__':
       "record": ucf.records
   }
 
-  with open("./record.json","w") as f:
-     json.dump(records,f, indent=4)
-     print("加载入文件完成...")
+#   with open("./record.json","w") as f:
+#      json.dump(records,f, indent=4)
+#      print("加载入文件完成...")
 
 #   with open("./record.json",'r') as load_f:
 #      records = json.load(load_f)
 
   e = Evalution(records["record"])
-  print(e.RMSE())
+  print(e.MAE())
   end = datetime.datetime.now()
   print((end -start).seconds)
