@@ -1,9 +1,16 @@
 import math 
 import random
 import os
-from pandas import DataFrame
+import pandas as pd
 import datetime
 import json
+import imp
+from KMeans.KMeans import *
+
+
+
+### 1M 的数据集 rating是6040位用户对3952部电影的评分数据共计（1000209条）
+
 
 
 class UserBasedCF:
@@ -12,6 +19,7 @@ class UserBasedCF:
         self.test = {} #用户-物品的评分表 测试集
         self.pred = {} # // 预测评分
         self.records = []
+        self.pf = None
         self.generate_dataset(path)
 
     def loadfile(self, path):
@@ -22,14 +30,11 @@ class UserBasedCF:
     
     def getRecord(self):
         # rui:是用户u对物品i的实际评分，pui是算法预测出来的用户u对物品i的评分
-        test = DataFrame(self.test).T.fillna(0)
-        pred = DataFrame(self.pred).T.fillna(0)
         for u, items in self.test.items():
             for i in items.keys():
-                # self.records.append([u,i, items[i], self.pred[u].get(i, self.average_rating(u))])
-                self.records.append([u,i, items[i], self.pred[u].get(i, 0)])
+                self.records.append([u,i, items[i], self.pred[u].get(i, self.average_rating(u))])
 
-    def generate_dataset(self, path, pivot=0.3):
+    def generate_dataset(self, path, pivot=0.7):
         # 读取文件，并生成用户-物品的评分表和测试集
         i = 0
         for line in self.loadfile(path):
@@ -43,7 +48,9 @@ class UserBasedCF:
             else:
                 self.test.setdefault(user, {})
                 self.test[user][movie] = int(rating)
-
+        df = pd.DataFrame(self.train)
+        self.pf = df.apply(lambda row: row.fillna(row.mean()), axis=1)
+    
     def calUserSim(self):  
     
         # 建立物品-用户的倒排表
@@ -94,8 +101,6 @@ class UserBasedCF:
                     part3 = 0.001
                 userSim[u][n] = part1 / (part2 * part3)
         self.W = userSim
-        test = DataFrame(userSim).T.fillna(0)
-        print(test)
         return userSim
 
     def UserSimilarity(self):
@@ -144,7 +149,6 @@ class UserBasedCF:
             # # 用户user产生过行为的item
             action_item = self.train[u].keys()
             for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
-                print(wuv)
                 average_n_rate = self.average_rating(v)
                 # 遍历前K个与user最相关的用户
                 # i：用户v有过行为的物品i
@@ -159,7 +163,11 @@ class UserBasedCF:
             for i, rating in self.pred[u].items():
                 self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
 
-
+    def kMeans(self, K, itter):
+        U, C, itter = Kmeans(self.pf, K, itter)
+        print('U', U)
+        print('C', C)
+        print('itter', itter)
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -196,7 +204,6 @@ class UserBasedCF:
 class Evalution:
     def __init__(self, records):
         self.records = records
-        # recoids[i] = [u, i rui, pui] 
 
     def RMSE (self):
         return math.sqrt(\
@@ -209,13 +216,14 @@ class Evalution:
 if __name__ == '__main__':
   path = os.path.join('data', 'ratingsData.dat')
   ucf = UserBasedCF(path)
-  W = ucf.UserSimilarity()
-  ucf.getAllUserPredition(10)
-  record = ucf.getRecord()
+  ucf.kMeans(3, 100)
+#   W = ucf.UserSimilarity()
+#   ucf.getAllUserPredition(10)
+#   record = ucf.getRecord()
   start = datetime.datetime.now()
-  records = {
-      "record": ucf.records
-  }
+#   records = {
+#       "record": ucf.records
+#   }
 
 #   with open("./record.json","w") as f:
 #      json.dump(records,f, indent=4)
@@ -224,7 +232,7 @@ if __name__ == '__main__':
 #   with open("./record.json",'r') as load_f:
 #      records = json.load(load_f)
 
-  e = Evalution(records["record"])
-  print(e.MAE())
+#   e = Evalution(records["record"])
+#   print(e.MAE())
   end = datetime.datetime.now()
   print((end -start).seconds)
