@@ -6,6 +6,7 @@ import datetime
 import json
 import imp
 from KMeans.KMeans import *
+from KMeans.DBI import *
 
 
 
@@ -26,7 +27,6 @@ class UserBasedCF:
         with open(path, 'r', encoding='utf-8') as fp:
             for i, line in enumerate(fp):
                 yield line.strip('\r\n')
-
     
     def getRecord(self):
         # rui:是用户u对物品i的实际评分，pui是算法预测出来的用户u对物品i的评分
@@ -164,10 +164,14 @@ class UserBasedCF:
                 self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
 
     def kMeans(self, K, itter):
-        U, C, itter = Kmeans(self.pf, K, itter)
+        data = self.pf.values
+        print('data', data)
+        print(np.shape(data))
+        U, C, itter = Kmeans(data, K, itter)
         print('U', U)
         print('C', C)
         print('itter', itter)
+        print(compute_DB_index(data, U, K))
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -216,7 +220,7 @@ class Evalution:
 if __name__ == '__main__':
   path = os.path.join('data', 'ratingsData.dat')
   ucf = UserBasedCF(path)
-  ucf.kMeans(3, 100)
+  ucf.kMeans(10, 100)
 #   W = ucf.UserSimilarity()
 #   ucf.getAllUserPredition(10)
 #   record = ucf.getRecord()
@@ -235,4 +239,4 @@ if __name__ == '__main__':
 #   e = Evalution(records["record"])
 #   print(e.MAE())
   end = datetime.datetime.now()
-  print((end -start).seconds)
+  print("const time:" + (end -start).seconds + "s")

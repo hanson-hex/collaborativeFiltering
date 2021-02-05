@@ -20,6 +20,7 @@ def compute_Si(i, x, clusters,nc):
  
 def compute_Rij(i, j, x, clusters, nc):
     Mij = vectorDistance(clusters[i],clusters[j])
+    print('---', Mij)
     Rij = (compute_Si(i,x,clusters[i],nc) + compute_Si(j,x,clusters[j],nc))/Mij
     return Rij
  

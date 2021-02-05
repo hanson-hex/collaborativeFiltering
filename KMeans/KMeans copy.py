@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# from DBI import compute_DB_index
-# dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
-# data = dataset.values
+from DBI import compute_DB_index
+dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
+data = dataset.values
 
 import random
 def distance(x1, x2):  # 计算距离
