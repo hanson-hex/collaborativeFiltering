@@ -13,7 +13,6 @@ from KMeans.DBI import *
 ### 1M 的数据集 rating是6040位用户对3952部电影的评分数据共计（1000209条）
 
 
-
 class UserBasedCF:
     def __init__(self, path):
         self.train = {} #用户-物品的评分表 训练集
