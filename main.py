@@ -166,11 +166,10 @@ class UserBasedCF:
         data = self.pf.values
         print('data', data)
         print(np.shape(data))
-        U, C, itter = Kmeans(data, K, itter)
+        U, C, itter, cluster = Kmeans(data, K, itter)
         print('U', U)
         print('C', C)
-        print('itter', itter)
-        print(compute_DB_index(data, U, K))
+        print(compute_DB_index(cluster, U, K))
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):

@@ -8,6 +8,7 @@ data = dataset.values
 import random
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
+
 def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
@@ -50,16 +51,16 @@ def Kmeans(D,K,maxIter):
                     U[i, j] = newU[i, j]
         if changed == 0:
             cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            print('cluster', cluster)
             return U, C, maxIter-curIter, cluster
     cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-    print('cluster', cluster)
     return U, C, maxIter-curIter, cluster
 
 U, C, iter, cluster = Kmeans(data,3,10)
 print('C', C) # [2, 0, 0, 0, 1]
 print('U', U)
-print(compute_DB_index(data, cluster, 3))
+print('data', data)
+print('cluster', cluster)
+print(compute_DB_index(cluster, U, 3))
 
 f1 = plt.figure(1)
 plt.title('watermelon_4')

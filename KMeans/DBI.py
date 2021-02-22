@@ -9,8 +9,6 @@ def vectorDistance(v1, v2):
     this function calculates de euclidean distance between two
     vectors.
     """
-    print('v1', v1)
-    print('v2', v2)
     return np.sqrt(np.sum(np.square(np.array(v1)-np.array(v2))))
  
 def compute_Si(i, x, cluster,nc):
