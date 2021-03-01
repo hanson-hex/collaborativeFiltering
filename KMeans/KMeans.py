@@ -1,9 +1,17 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from DBI import compute_DB_index
-dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
-data = dataset.values
+from sklearn.cluster import KMeans
+from sklearn.datasets import load_iris
+from sklearn.metrics import davies_bouldin_score as dbs
+# from DBI import compute_DB_index
+
+# dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
+# data = dataset.values
+
+iris = load_iris()
+X = iris.data[:, 2:]
+
 
 import random
 def distance(x1, x2):  # 计算距离
@@ -55,24 +63,61 @@ def Kmeans(D,K,maxIter):
     cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
     return U, C, maxIter-curIter, cluster
 
-U, C, iter, cluster = Kmeans(data,3,10)
-print('C', C) # [2, 0, 0, 0, 1]
-print('U', U)
-print('data', data)
-print('cluster', cluster)
-print(compute_DB_index(cluster, U, 3))
+# U, C1, iter, cluster = Kmeans(data, 3,10)
+# print(dbs(data, C1))
+# # print(compute_DB_index(cluster, U, 3))
 
-f1 = plt.figure(1)
-plt.title('watermelon_4')
-plt.xlabel('density')
-plt.ylabel('ratio')
-plt.scatter(data[:, 0], data[:, 1], marker='o', color='g', s=50)
-plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=100)
-# plt.xlim(0,1)
-# plt.ylim(0,1)
-m, n = np.shape(data)
-for i in range(m):
-    plt.plot([data[i, 0], U[int(C[i]), 0]], [data[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
-plt.show()
+# U, C2, iter, cluster = Kmeans(X, 3,10)
+# print(dbs(X, C2))
+
+
+# estimator = KMeans(n_clusters=3) # 构造聚类器
+# estimator.fit(data) # 聚类
+# label_pred = estimator.labels_ # 获取聚类标签
+# print(dbs(data, label_pred))
+
+# estimator = KMeans(n_clusters=3) # 构造聚类器
+# estimator.fit(X) # 聚类
+# label_pred2 = estimator.labels_ # 获取聚类标签
+# print(dbs(X, label_pred2))
+
+#绘制k-means结果
+# x0 = X[label_pred == 0]
+# x1 = X[label_pred == 1]
+# x2 = X[label_pred == 2]
+# plt.scatter(x0[:, 0], x0[:, 1], c = "red", marker='o', label='label0')
+# plt.scatter(x1[:, 0], x1[:, 1], c = "green", marker='*', label='label1')
+# plt.scatter(x2[:, 0], x2[:, 1], c = "blue", marker='+', label='label2')
+# plt.xlabel('petal length')
+# plt.ylabel('petal width')
+# plt.legend(loc=2)
+# plt.show()
+
+
+# f1 = plt.figure(1)
+# plt.title('watermelon_4')
+# plt.xlabel('density')
+# plt.ylabel('ratio')
+# plt.scatter(X[:, 0], X[:, 1], marker='o', color='g', s=50)
+# plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=100)
+# # plt.xlim(0,1)
+# # plt.ylim(0,1)
+# m, n = np.shape(X)
+# for i in range(m):
+#     plt.plot([X[i, 0], U[int(C[i]), 0]], [X[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
+# plt.show()
+
+# f1 = plt.figure(1)
+# plt.title('watermelon_4')
+# plt.xlabel('density')
+# plt.ylabel('ratio')
+# plt.scatter(data[:, 0], data[:, 1], marker='o', color='g', s=50)
+# plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=100)
+# # plt.xlim(0,1)
+# # plt.ylim(0,1)
+# m, n = np.shape(data)
+# for i in range(m):
+#     plt.plot([data[i, 0], U[int(C[i]), 0]], [data[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
+# plt.show()
 
 # # %%

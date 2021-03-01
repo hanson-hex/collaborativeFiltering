@@ -6,7 +6,7 @@ import datetime
 import json
 import imp
 from KMeans.KMeans import *
-from KMeans.DBI import *
+# from KMeans.DBI import *
 
 
 
@@ -167,9 +167,7 @@ class UserBasedCF:
         print('data', data)
         print(np.shape(data))
         U, C, itter, cluster = Kmeans(data, K, itter)
-        print('U', U)
-        print('C', C)
-        print(compute_DB_index(cluster, U, K))
+        print(dbs(data, C))
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -237,4 +235,4 @@ if __name__ == '__main__':
 #   e = Evalution(records["record"])
 #   print(e.MAE())
   end = datetime.datetime.now()
-  print("const time:" + (end -start).seconds + "s")
+#   print("const time:" + (end -start).seconds + "s")
