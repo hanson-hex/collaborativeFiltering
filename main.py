@@ -47,11 +47,10 @@ class UserBasedCF:
             else:
                 self.test.setdefault(user, {})
                 self.test[user][movie] = int(rating)
-        df = pd.DataFrame(self.train)
-        self.pf = df.apply(lambda row: row.fillna(row.mean()), axis=1)
+        df = pd.DataFrame(self.train).T
+        self.df = df.apply(lambda row: row.fillna(row.mean()), axis=1)
     
     def calUserSim(self):  
-    
         # 建立物品-用户的倒排表
         movie_user = {}
         for ukey in self.train.keys():
@@ -74,9 +73,9 @@ class UserBasedCF:
         # 计算用户-用户共现矩
         userSim = {}
         for u in C.keys():  
-    
+
             for n in C[u].keys():  
-    
+
                 userSim.setdefault(u,{})
                 userSim[u].setdefault(n,0)  
     
@@ -124,8 +123,9 @@ class UserBasedCF:
                     C[u].setdefault(v,0)
                     C[u][v] += 1
 
-        #计算用户-用户相似度，余弦相似度
-        self.W = dict()      #相似度矩阵
+        # 计算用户-用户相似度，余弦相似度
+        self.W = dict()
+        # 相似度矩阵
         for u,related_users in C.items():
             self.W.setdefault(u,{})
             for v,cuv in related_users.items():
@@ -138,6 +138,54 @@ class UserBasedCF:
             average += self.train[user][u]
         average = average * 1.0 / len(self.train[user].keys())
         return average 
+       
+    def calKmeansUserSim(self, C, cluster, indexCluster):
+        def aa (row1, row2):
+            avg1 = np.mean(row1)
+            avg2 = np.mean(row2)
+            a = 0
+            b = 0
+            c = 0
+            for i in range(len(row1)):
+                a += (row1[i] - avg1)*(row2[i] - avg2)
+                b += pow(row1[i] - avg1, 2)
+                c += pow(row2[i] - avg2, 2)
+            return a / (math.sqrt(b)*math.sqrt(c))
+        self.W = dict()
+        for i in C:
+            clusterItem = cluster[int(i)]
+            indexClusterItem = indexCluster[int(i)]
+            for i, u1 in enumerate(indexClusterItem):
+                self.W.setdefault(u1, {})
+                for j, u2 in enumerate(indexClusterItem):
+                    if (i >= j):
+                        continue
+                    self.W[u1][u2] = aa(clusterItem[i], clusterItem[j])
+                    self.W.setdefault(u2, {})
+                    self.W[u2][u1] = self.W[u1][u2]
+
+    # def getKmeansPredition(self, K):
+        # self.pred = {}
+        # for u, items in self.train.items():
+        #     self.pred.setdefault(u, {})
+        #     average_u_rate = self.average_rating(u)
+        #     sumUserSim = 0
+        #     # # 用户user产生过行为的item
+        #     action_item = self.train[u].keys()
+        #     for v,wuv in sorted(self.KmeansW[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
+        #         average_n_rate = self.average_rating(v)
+        #         # 遍历前K个与user最相关的
+        #         # i：用户v有过行为的物品i
+        #         # rvi：用户v对物品i的打分
+        #         for i,rvi in self.train[v].items():
+        #             if i in action_item:
+        #                 continue
+        #             self.pred[u].setdefault(i, 0)
+        #             self.pred[u][i] += wuv * (rvi - average_n_rate)
+        #         sumUserSim += wuv
+
+        #     for i, rating in self.pred[u].items():
+        #         self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
 
     def getAllUserPredition(self, K):
         self.pred = {}
@@ -149,7 +197,7 @@ class UserBasedCF:
             action_item = self.train[u].keys()
             for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
                 average_n_rate = self.average_rating(v)
-                # 遍历前K个与user最相关的用户
+                # 遍历前K个与user最相关的
                 # i：用户v有过行为的物品i
                 # rvi：用户v对物品i的打分
                 for i,rvi in self.train[v].items():
@@ -163,16 +211,17 @@ class UserBasedCF:
                 self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
 
     def kMeans(self, K, itter):
-        data = self.pf.values
-        print('data', data)
-        print(np.shape(data))
-        U, C, itter, cluster = Kmeans(data, K, itter)
-        print(dbs(data, C))
+        data = self.df.values
+        U, C, itter, cluster, indexCluster = Kmeans(data, K, itter)
+        self.calKmeansUserSim(C, cluster, indexCluster)
+        # self.KmeansW = self.calKmeansUserSim(cluster, indexCluster)
+
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
         rank = dict()
-        action_item = self.train[u].keys()     #用户user产生过行为的item
+        action_item = self.train[u].keys()    
+        # 用户user产生过行为的item
         # v: 用户v
         # wuv：用户u和用户v的相似度
         for v,wuv in sorted(self.W[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
@@ -216,10 +265,12 @@ class Evalution:
 if __name__ == '__main__':
   path = os.path.join('data', 'ratingsData.dat')
   ucf = UserBasedCF(path)
-  ucf.kMeans(10, 100)
 #   W = ucf.UserSimilarity()
 #   ucf.getAllUserPredition(10)
 #   record = ucf.getRecord()
+  ucf.kMeans(10, 100)
+  ucf.getAllUserPredition(10)
+  record = ucf.getRecord()
   start = datetime.datetime.now()
 #   records = {
 #       "record": ucf.records

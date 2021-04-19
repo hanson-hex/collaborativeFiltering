@@ -53,19 +53,16 @@ def Kmeans(D,K,maxIter):
     return U, C, maxIter-curIter
 
 U, C, iter = Kmeans(data,3,10)
-print(compute_DB_index(data, U, 3))
 
-# f1 = plt.figure(1)
-# plt.title('watermelon_4')
-# plt.xlabel('density')
-# plt.ylabel('ratio')
-# plt.scatter(data[:, 0], data[:, 1], marker='o', color='g', s=50)
-# plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=100)
-# # plt.xlim(0,1)
-# # plt.ylim(0,1)
-# m, n = np.shape(data)
-# for i in range(m):
-#     plt.plot([data[i, 0], U[int(C[i]), 0]], [data[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
-# plt.show()
+f1 = plt.figure(1)
+plt.title('watermelon_4')
+plt.xlabel('density')
+plt.ylabel('ratio')
+plt.scatter(data[:, 0], data[:, 1], marker='o', color='g', s=50)
+plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=100)
+m, n = np.shape(data)
+for i in range(m):
+    plt.plot([data[i, 0], U[int(C[i]), 0]], [data[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
+plt.show()
 
-# # %%
+# %%

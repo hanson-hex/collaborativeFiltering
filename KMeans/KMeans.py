@@ -9,8 +9,8 @@ from sklearn.metrics import davies_bouldin_score as dbs
 # dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
 # data = dataset.values
 
-iris = load_iris()
-X = iris.data[:, 2:]
+# iris = load_iris()
+# X = iris.data[:, 2:]
 
 
 import random
@@ -49,6 +49,7 @@ def Kmeans(D,K,maxIter):
         for i in range(m):
             newU[int(C[i])] += D[i]
             cnt[int(C[i])] += 1
+
         changed = 0
         # 判断质心是否发生变化，如果发生变化则继续迭代，否则结束
         for i in range(K):
@@ -59,9 +60,12 @@ def Kmeans(D,K,maxIter):
                     U[i, j] = newU[i, j]
         if changed == 0:
             cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            return U, C, maxIter-curIter, cluster
-    cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-    return U, C, maxIter-curIter, cluster
+            indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
+            return U, C, maxIter-curIter, cluster, indexCluster
+    cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
+    indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
+
+    return U, C, maxIter-curIter, cluster, indexCluster
 
 # U, C1, iter, cluster = Kmeans(data, 3,10)
 # print(dbs(data, C1))
