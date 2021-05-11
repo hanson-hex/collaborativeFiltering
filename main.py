@@ -150,6 +150,10 @@ class UserBasedCF:
                 a += (row1[i] - avg1)*(row2[i] - avg2)
                 b += pow(row1[i] - avg1, 2)
                 c += pow(row2[i] - avg2, 2)
+            if b == 0:
+                b = 0.001
+            if c == 0:
+                c = 0.001
             return a / (math.sqrt(b)*math.sqrt(c))
         self.KmeansW = dict()
         for index, clusterItem in enumerate(cluster):
@@ -174,6 +178,9 @@ class UserBasedCF:
             sumUserSim = 0
             # # 用户user产生过行为的item
             action_item = self.train[u].keys()
+            print('u', u)
+            print('self.KmeansW', self.KmeansW)
+            print('self.KmeansW[1]', self.KmeansW[u])
             for v,wuv in sorted(self.KmeansW[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
                 average_n_rate = self.average_rating(v)
                 # 遍历前K个与user最相关的
@@ -215,8 +222,10 @@ class UserBasedCF:
     def kMeans(self, K, itter):
         data = self.df.values
         U, C, itter, cluster, indexCluster = Kmeans(data, K, itter)
+        for i, clusterItem in enumerate(cluster):
+            print('index: {}, ClusterItem: {}'.format(i, indexCluster[i]))
         self.calKmeansUserSim(cluster, indexCluster)
-        # self.KmeansW = self.calKmeansUserSim(cluster, indexCluster)
+        print('self.KmeansW', self.KmeansW)
 
 
     #给用户user推荐，前K个相关用户
