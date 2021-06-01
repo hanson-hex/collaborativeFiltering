@@ -178,9 +178,7 @@ class UserBasedCF:
             sumUserSim = 0
             # # 用户user产生过行为的item
             action_item = self.train[u].keys()
-            print('u', u)
-            print('self.KmeansW', self.KmeansW)
-            print('self.KmeansW[1]', self.KmeansW[u])
+            u = int(u)
             for v,wuv in sorted(self.KmeansW[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
                 average_n_rate = self.average_rating(v)
                 # 遍历前K个与user最相关的
@@ -225,7 +223,12 @@ class UserBasedCF:
         for i, clusterItem in enumerate(cluster):
             print('index: {}, ClusterItem: {}'.format(i, indexCluster[i]))
         self.calKmeansUserSim(cluster, indexCluster)
-        print('self.KmeansW', self.KmeansW)
+        records = {
+            "record": self.KmeansW
+        }
+        with open("./record.json","w") as f:
+            json.dump(records,f, indent=4)
+            print("加载入文件完成...")
 
 
     #给用户user推荐，前K个相关用户
