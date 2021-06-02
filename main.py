@@ -49,7 +49,14 @@ class UserBasedCF:
                 self.test[user][movie] = int(rating)
         df = pd.DataFrame(self.train).T
         self.df = df.apply(lambda row: row.fillna(row.mean()), axis=1)
+        records = {
+          "train": self.train
+        }
+        with open("./train.json","w") as f:
+            json.dump(records,f, indent=4)
+            print("加载入文件完成...")
     
+
     def calUserSim(self):  
         # 建立物品-用户的倒排表
         movie_user = {}
@@ -161,10 +168,17 @@ class UserBasedCF:
             for i, item in enumerate(clusterItem):
                 for j, jItem in enumerate(clusterItem):
                     if (i >= j):
+                        if len(clusterItem) == 1:
+                            u1 = indexClusterItem[i]
+                            u1 = str(u1)
+                            self.KmeansW.setdefault(u1, {})
+                            self.KmeansW[u1][u1] = 1
                         continue
                     u1 = indexClusterItem[i]
+                    u1 = str(u1)
                     self.KmeansW.setdefault(u1, {})
                     u2 = indexClusterItem[j]
+                    u2 = str(u2)
                     self.KmeansW[u1][u2] = aa(item, jItem)
                     self.KmeansW.setdefault(u2, {})
                     self.KmeansW[u2][u1] = self.KmeansW[u1][u2]
@@ -178,7 +192,6 @@ class UserBasedCF:
             sumUserSim = 0
             # # 用户user产生过行为的item
             action_item = self.train[u].keys()
-            u = int(u)
             for v,wuv in sorted(self.KmeansW[u].items(),key=lambda x:x[1],reverse=True)[0:K]:
                 average_n_rate = self.average_rating(v)
                 # 遍历前K个与user最相关的
@@ -192,7 +205,13 @@ class UserBasedCF:
                 sumUserSim += wuv
 
             for i, rating in self.pred[u].items():
-                self.pred[u][i] = average_u_rate + (self.pred[u][i]*1.0) / sumUserSim
+                if sumUserSim == 0:
+                    print('u', u)
+                    print('i', i)
+                    result = 0.0
+                else:
+                    result = (self.pred[u][i]*1.0) / sumUserSim
+                self.pred[u][i] = average_u_rate + result
 
     def getAllUserPredition(self, K):
         self.pred = {}
@@ -224,11 +243,11 @@ class UserBasedCF:
             print('index: {}, ClusterItem: {}'.format(i, indexCluster[i]))
         self.calKmeansUserSim(cluster, indexCluster)
         records = {
-            "record": self.KmeansW
+            "KmeansW": self.KmeansW
         }
-        with open("./record.json","w") as f:
+        with open("./KMeansW.json","w") as f:
             json.dump(records,f, indent=4)
-            print("加载入文件完成...")
+            print("KmeansW 保存成功")
 
 
     #给用户user推荐，前K个相关用户
@@ -286,6 +305,7 @@ if __name__ == '__main__':
   ucf.kMeans(10, 100)
   ucf.getKmeansPredition(10)
   record = ucf.getRecord()
+
   start = datetime.datetime.now()
   records = {
       "record": ucf.records

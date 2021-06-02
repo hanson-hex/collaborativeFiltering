@@ -4,19 +4,29 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.datasets import load_iris
 from sklearn.metrics import davies_bouldin_score as dbs
-from DBI import DaviesBouldin, compute_DB_index
+from DBI import compute_DB_index, DaviesBouldin
 
+# dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
+# data = dataset.values
 
-# iris = load_iris()
-# X = iris.data
-# print('X', X)
+iris = load_iris()
+X = iris.data
+print('X', X)
+
+# %%
+
+a = pd.DataFrame(X)
+X = a.copy()
+
+# %%
+
 
 
 import random
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
 
-def Kmeans(D,K,maxIter):
+def MyKmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
@@ -31,6 +41,7 @@ def Kmeans(D,K,maxIter):
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
+    print('---curIter', curIter)
     while curIter > 0:
         curIter -= 1
         # 计算样本到各均值向量的距离
@@ -59,29 +70,44 @@ def Kmeans(D,K,maxIter):
                     U[i, j] = newU[i, j]
         if changed == 0:
             cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            return U, C, maxIter-curIter, cluster, indexCluster
+            # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
+            print('return CurIterm', curIter)
+            return U, C, maxIter-curIter, cluster
+    print('return CurIterm', curIter)
     cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
-    indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
+    # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
 
-    return U, C, maxIter-curIter, cluster, indexCluster
+    return U, C, maxIter-curIter, cluster
 
-# U, C1, iter, cluster = Kmeans(data, 3,10)
-# print(dbs(data, C1))
-# 
+U, C, iter, cluster = MyKmeans(X, 3,1)
+print('iter', iter)
+print('C', C)
+print(dbs(X, C))
+# print(compute_DB_index(cluster, U, 3))
+print(DaviesBouldin(X, C))
 
 
-# estimator = KMeans(n_clusters=3) # 构造聚类器
-# estimator.fit(data) # 聚类
-# label_pred = estimator.labels_ # 获取聚类标签
-# print(dbs(data, label_pred))
+f1 = plt.figure(1)
+plt.title('watermelon_4')
+plt.xlabel('hua_e')
+plt.ylabel('hua_b')
+plt.scatter(X[:, 0], X[:, 1], marker='o', color='g', s=50)
+plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=60)
+plt.scatter(U[:, 0], U[:, 2], marker='o', color='y', s=80)
+plt.xlim(0,10)
+plt.ylim(0,5)
+m, n = np.shape(X)
+# for i in range(m):
+#     plt.plot([X[i, 0] * X[i, 1], U[int(C[i]), 0] * U[int(C[i]), 1]], [X[i, 2] * X[i, 3], U[int(C[i]), 2] * U[int(C[i]), 3]], "c--", linewidth=0.3)
+plt.show()
 
-# estimator = KMeans(n_clusters=3) # 构造聚类器
+
+# estimator = KMeans(n_clusters=3, max_iter=1, random_state=1) # 构造聚类器
 # estimator.fit(X) # 聚类
-# label_pred2 = estimator.labels_ # 获取聚类标签
-# print(dbs(X, label_pred2))
+# label_pred = estimator.labels_ # 获取聚类标签
+# print(dbs(X, label_pred))
 
-#绘制k-means结果
+# #绘制k-means结果
 # x0 = X[label_pred == 0]
 # x1 = X[label_pred == 1]
 # x2 = X[label_pred == 2]

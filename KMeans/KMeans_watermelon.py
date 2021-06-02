@@ -52,7 +52,7 @@ def Kmeans(D,K,maxIter):
             return U, C, maxIter-curIter
     return U, C, maxIter-curIter
 
-U, C, iter = Kmeans(data,3,10)
+U, C, iter = Kmeans(data,3,4)
 
 f1 = plt.figure(1)
 plt.title('watermelon_4')
@@ -65,4 +65,8 @@ for i in range(m):
     plt.plot([data[i, 0], U[int(C[i]), 0]], [data[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
 plt.show()
 
+
+from sklearn.metrics import davies_bouldin_score as dbs
+
+print(dbs(data, C))
 # %%

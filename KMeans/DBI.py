@@ -38,6 +38,30 @@ def compute_DB_index(x, clusters, nc):
     DB_index = float(sigma_R)/float(nc)
     return DB_index
 
+def DaviesBouldin(X, labels):
+    n_cluster = len(np.bincount(labels))
+    cluster_k = [X[labels == k] for k in range(n_cluster)]
+    centroids = [np.mean(k, axis = 0) for k in cluster_k]
+
+    #求S
+    S = [np.mean([vectorDistance(p, centroids[i]) for p in k]) for i, k in enumerate(cluster_k)]
+    Ri = []
+
+    for i in range(n_cluster):
+        Rij = []
+        #计算Rij
+        for j in range(n_cluster):
+            if j != i:
+                r = (S[i] + S[j]) / vectorDistance(centroids[i], centroids[j])
+                Rij.append(r)
+            #求Ri
+        Ri.append(max(Rij)) 
+
+    # 求dbi  
+    dbi = np.mean(Ri)
+
+    return dbi
+
 #  ```
 #  1、计算Si
 
