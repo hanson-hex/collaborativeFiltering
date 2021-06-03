@@ -2,21 +2,20 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, load_wine
 from sklearn.metrics import davies_bouldin_score as dbs
 from DBI import compute_DB_index, DaviesBouldin
 
-# dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
-# data = dataset.values
+dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
+data = dataset.values
 
 iris = load_iris()
 X = iris.data
 print('X', X)
 
-# %%
-
-a = pd.DataFrame(X)
-X = a.copy()
+wine = load_wine()
+Y = wine.data
+print("Y", Y)
 
 # %%
 
@@ -41,7 +40,6 @@ def MyKmeans(D,K,maxIter):
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
-    print('---curIter', curIter)
     while curIter > 0:
         curIter -= 1
         # 计算样本到各均值向量的距离
@@ -71,35 +69,49 @@ def MyKmeans(D,K,maxIter):
         if changed == 0:
             cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
             # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            print('return CurIterm', curIter)
             return U, C, maxIter-curIter, cluster
-    print('return CurIterm', curIter)
     cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
     # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
 
     return U, C, maxIter-curIter, cluster
 
-U, C, iter, cluster = MyKmeans(X, 3,1)
+# U, C, iter, cluster = MyKmeans(X, 3, 3)
+# print('iter', iter)
+# print('C', C)
+# print(dbs(X, C))
+# print(compute_DB_index(cluster, U, 3))
+# print(DaviesBouldin(X, C))
+
+
+# U, C, iter, cluster = MyKmeans(Y, 13, 99)
+# print('iter', iter)
+# print('C', C)
+# print(dbs(Y, C))
+# print(compute_DB_index(cluster, U, 3))
+# print(DaviesBouldin(Y, C))
+
+
+U, C, iter, cluster = MyKmeans(data, 3, 1)
 print('iter', iter)
 print('C', C)
-print(dbs(X, C))
-# print(compute_DB_index(cluster, U, 3))
-print(DaviesBouldin(X, C))
+# print(dbs(data, C))
+# print(compute_DB_index(cluster, U, 10))
+print(DaviesBouldin(data, C))
 
 
-f1 = plt.figure(1)
-plt.title('watermelon_4')
-plt.xlabel('hua_e')
-plt.ylabel('hua_b')
-plt.scatter(X[:, 0], X[:, 1], marker='o', color='g', s=50)
-plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=60)
-plt.scatter(U[:, 0], U[:, 2], marker='o', color='y', s=80)
-plt.xlim(0,10)
-plt.ylim(0,5)
-m, n = np.shape(X)
-# for i in range(m):
-#     plt.plot([X[i, 0] * X[i, 1], U[int(C[i]), 0] * U[int(C[i]), 1]], [X[i, 2] * X[i, 3], U[int(C[i]), 2] * U[int(C[i]), 3]], "c--", linewidth=0.3)
-plt.show()
+# f1 = plt.figure(1)
+# plt.title('watermelon_4')
+# plt.xlabel('hua_e')
+# plt.ylabel('hua_b')
+# plt.scatter(X[:, 0], X[:, 1], marker='o', color='g', s=50)
+# plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=60)
+# plt.scatter(U[:, 0], U[:, 2], marker='o', color='y', s=80)
+# plt.xlim(0,10)
+# plt.ylim(0,5)
+# m, n = np.shape(X)
+# # for i in range(m):
+# #     plt.plot([X[i, 0] * X[i, 1], U[int(C[i]), 0] * U[int(C[i]), 1]], [X[i, 2] * X[i, 3], U[int(C[i]), 2] * U[int(C[i]), 3]], "c--", linewidth=0.3)
+# plt.show()
 
 
 # estimator = KMeans(n_clusters=3, max_iter=1, random_state=1) # 构造聚类器
