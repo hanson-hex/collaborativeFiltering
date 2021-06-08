@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 def line (MaxIter):
 	Curve = np.zeros([MaxIter, 1])
 	for t in range(MaxIter):
-		Curve[t] = 2 - t/MaxIter
+		Curve[t] = 2 - 2*t/MaxIter
 	return Curve
 
 def exp(MaxIter):

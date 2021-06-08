@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+# from sklearn.cluster import KMeans
 from sklearn.datasets import load_iris, load_wine
 from sklearn.metrics import davies_bouldin_score as dbs
-from DBI import compute_DB_index, DaviesBouldin
+from DBI import compute_DB_index
+import math
 
 dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
 data = dataset.values
@@ -25,7 +26,7 @@ import random
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
 
-def MyKmeans(D,K,maxIter):
+def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
@@ -75,10 +76,30 @@ def MyKmeans(D,K,maxIter):
 
     return U, C, maxIter-curIter, cluster
 
-# U, C, iter, cluster = MyKmeans(X, 3, 3)
+def Kmeans1():
+    pass
+
+def averFitness(func, X, K, number, maxIter):
+    s = []
+    for i in range(number):
+        U, C, iter, cluster = func(X, K, maxIter)
+        s.append(dbs(X, C))
+    return max(s), min(s), sum(s) / number
+
+# U, C, iter, cluster = MyKmeans(X, 4, 10)
+
+# max, min, aver = averFitness(Kmeans, X=X, K=4, number = 30, maxIter = 10)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
+
+max, min, aver = averFitness(Kmeans, X=Y, K=13, number = 30, maxIter = 10)
+
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
 # print('iter', iter)
 # print('C', C)
-# print(dbs(X, C))
 # print(compute_DB_index(cluster, U, 3))
 # print(DaviesBouldin(X, C))
 
@@ -91,12 +112,11 @@ def MyKmeans(D,K,maxIter):
 # print(DaviesBouldin(Y, C))
 
 
-U, C, iter, cluster = MyKmeans(data, 3, 1)
+U, C, iter, cluster = Kmeans(data, 3, 1)
 print('iter', iter)
 print('C', C)
-# print(dbs(data, C))
+print(dbs(data, C))
 # print(compute_DB_index(cluster, U, 10))
-print(DaviesBouldin(data, C))
 
 
 # f1 = plt.figure(1)

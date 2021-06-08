@@ -12,7 +12,12 @@ def sphere(X):
     return output
 
 def rastringin(X):
-    output = sum(np.square(X)) - sum(10*np.cos(2*np.pi*X)) + 20
+    output = sum(np.square(X)) - sum(10*np.cos(2*np.pi*X)) + 10
+    return output
+ 
+
+def alpine(X):
+    output = np.sum(np.abs(0.1*X + X*np.sin(X)))
     return output
 
 
@@ -71,6 +76,7 @@ def sensory_modality_NEW(x,Ngen):
 
 
 '''蝴蝶优化算法'''
+## 基础蝴蝶算法
 def BOA(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
@@ -121,6 +127,7 @@ def BOA(pop, dim, lb, ub, MaxIter, fun):
     return GbestScore, GbestPositon, Curve
 
 
+## 融入差分进化和精英算法
 def BOA1(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
@@ -193,6 +200,7 @@ def BOA1(pop, dim, lb, ub, MaxIter, fun):
     return GbestScore, GbestPositon, Curve
 
 
+## 指数收敛因子+ 差分精华算法
 def BOA2(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
@@ -208,8 +216,7 @@ def BOA2(pop, dim, lb, ub, MaxIter, fun):
     X_new = X
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
-        a = 1 - t/MaxIter
-        a = math.exp(t)
+        a = 2*math.exp(-t/MaxIter)
         for i in range(pop):
             FP = sensory_modality*(fitness**power_exponent)
             # 全局最优
@@ -319,6 +326,7 @@ def BOA3(pop, dim, lb, ub, MaxIter, fun):
 
     return GbestScore, GbestPositon, Curve
 
+## 指数收敛因子
 def BOA35(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
@@ -372,6 +380,8 @@ def BOA35(pop, dim, lb, ub, MaxIter, fun):
 
     return GbestScore, GbestPositon, Curve
 
+  
+## 线性收敛因子
 def BOA4(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
@@ -530,9 +540,23 @@ def averFitness(BOA, function, number):
 # print('最优解：', GbestPositon)
 
 
-print('平均最优适应度值：', averFitness(BOA, sphere, 10))
+# print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 30))
+# print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 30))
 
+# print('线性sphere最优适应度值：', averFitness(BOA4, sphere, 30))
+# print('线性alpine平均最优适应度值：', averFitness(BOA4, alpine, 30))
 
+# print('指数sphere最优适应度值：', averFitness(BOA35, sphere, 30))
+# print('指数apline平均最优适应度值：', averFitness(BOA35, alpine, 30))
+
+# print('指数sphere最优适应度值：', averFitness(BOA35, sphere, 30))
+# print('指数apline平均最优适应度值：', averFitness(BOA35, alpine, 30))
+
+# print('指数sphere最优适应度值：', averFitness(BOA35, sphere, 30))
+# print('指数apline平均最优适应度值：', averFitness(BOA35, alpine, 30))
+
+print('指数sphere最优适应度值：', averFitness(BOA2, sphere, 30))
+print('指数apline平均最优适应度值：', averFitness(BOA2, alpine, 30))
 # GbestScore1, GbestPositon1, Curve1 = BOA1(pop, dim, lb, ub, MaxIter, fun)
 # print('1最优适应度值：', GbestScore1)
 # print('1最优解：', GbestPositon1)
@@ -560,19 +584,19 @@ print('平均最优适应度值：', averFitness(BOA, sphere, 10))
 # print('最优解：', GbestPositon5)
 
 # 绘制适应度曲线
-plt.figure(1)
-# plt.plot(Curve, 'r-', linewidth=2)
-# plt.plot(Curve1, 'g-', linewidth=2)
-# plt.plot(Curve2, 'o-', linewidth=2)
-# plt.plot(Curve3, 'y-', linewidth=2)
-# plt.plot(Curve35, 'c-', linewidth=2)
-# plt.plot(Curve4, 'b-', linewidth=2)
-plt.xlabel('Iteration', fontsize='medium')
-plt.ylabel("Fitness", fontsize='medium')
-plt.legend(["基础蝴蝶算法", "IBOA", "SIBOA", ""])
-plt.grid()
-# plt.title('BOA', fontsize='large')
-plt.show()
+# plt.figure(1)
+# # plt.plot(Curve, 'r-', linewidth=2)
+# # plt.plot(Curve1, 'g-', linewidth=2)
+# # plt.plot(Curve2, 'o-', linewidth=2)
+# # plt.plot(Curve3, 'y-', linewidth=2)
+# # plt.plot(Curve35, 'c-', linewidth=2)
+# # plt.plot(Curve4, 'b-', linewidth=2)
+# plt.xlabel('Iteration', fontsize='medium')
+# plt.ylabel("Fitness", fontsize='medium')
+# plt.legend(["基础蝴蝶算法", "IBOA", "SIBOA", ""])
+# plt.grid()
+# # plt.title('BOA', fontsize='large')
+# plt.show()
 
 # # 绘制搜索空间
 # fig = plt.figure(2)
