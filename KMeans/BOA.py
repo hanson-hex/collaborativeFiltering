@@ -71,8 +71,6 @@ def sensory_modality_NEW(x,Ngen):
     b = 0.025
     # b = 1
     y=x+(b/(x*Ngen))
-    return y
-
 
 
 '''蝴蝶优化算法'''
