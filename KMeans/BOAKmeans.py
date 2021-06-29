@@ -2,6 +2,7 @@ import numpy as np
 import random
 import math
 from matplotlib import pyplot as plt
+from sklearn.metrics import davies_bouldin_score as dbs
 
 '''优化函数'''
 
@@ -11,9 +12,35 @@ def sphere(X):
     output = sum(np.square(X)/25)
     return output
 
-def a(X):
-    pass
+def a(D, X):
+    m, n = np.shape(D)
+    K = 0
+    for i in range(len(X)):
+        K += math.pow(2, i) * X[len(X) - 1 - i]
+    K = int(K)
+    initSet = set()
+    curK = K
+    while(curK>0):  # 随机选取k个样本
+        randomInt = random.randint(0, m-1)
+        if randomInt not in initSet:
+            curK -= 1
+            initSet.add(randomInt)
+    
+    U = D[list(initSet), :]  # 均值向量,即质心
+    C = np.zeros(m)
+    # 计算样本到各均值向量的距离
+    for i in range(m):
+        p = 0
+        minDistance = distance(D[i], U[0])
+        for j in range(1, K):
+            if distance(D[i], U[j]) < minDistance:
+                p = j
+                minDistance = distance(D[i], U[j])
+        C[i] = p
+    dbs(D, C)
 
+
+print(a([1, 1, 1, 1, 1, 1, 1, 1]))
 
 ''' 种群初始化函数 '''
 
@@ -37,7 +64,6 @@ def BorderCheck(X, ub, lb, pop, dim):
 
 
 '''计算适应度函数'''
-
 def CaculateFitness(X, fun):
     pop = X.shape[0]
     fitness = np.zeros([pop, 1])
@@ -45,13 +71,11 @@ def CaculateFitness(X, fun):
         fitness[i] = fun(X[i, :])
     return fitness
 
-
 '''适应度排序'''
 def SortFitness(Fit):
     fitness = np.sort(Fit, axis=0)
     index = np.argsort(Fit, axis=0)
     return fitness, index
-
 
 '''根据适应度对位置进行排序'''
 def SortPosition(X, index):
@@ -65,7 +89,6 @@ def sensory_modality_NEW(x,Ngen):
     # b = 1
     y=x+(b/(x*Ngen))
    
-
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
    
@@ -83,9 +106,7 @@ def initialBOA(pop, dim, ub, lb):
   
 
 def merge(X, A):
-    
     pass
-
    
 def BOAK(pop, dim, lb, ub, maxIter, fun, A):
     p=0.8 #probabibility switch
@@ -93,7 +114,7 @@ def BOAK(pop, dim, lb, ub, maxIter, fun, A):
     sensory_modality=0.01 # c = 0.01
     
     X, lb, ub = initialBOA(pop, dim, ub, lb)  # 初始化种群
-    X,C = merge(X, A)
+    # X,C = merge(X, A)
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
@@ -122,7 +143,6 @@ def BOAK(pop, dim, lb, ub, maxIter, fun, A):
             if(fun(X_new[i,:])<fitness[i]):
                 X[i,:] = X_new[i,:]
             
-            
         X = X_new    
         X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
         fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -137,11 +157,15 @@ def BOAK(pop, dim, lb, ub, maxIter, fun, A):
 
     return GbestScore, GbestPositon, Curve
 
+def getInitSet(D, K, m):
+    
+    pass
+
 def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    initSet = getInitSet(K, m) 
+    initSet = getInitSet(D, K, m) 
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
@@ -217,12 +241,12 @@ def csAndSelect(pop, dim, X, mutate, fun, fitness):
 # 设置参数
 pop = 50  # 种群数量
 MaxIter = 500 # 最大迭代次数
-dim = 30 # 维度
-lb = 1 * np.ones([dim, 1])  # 下边界
-ub = 100 * np.ones([dim, 1])  # 上边界
+dim = 8 # 维度
+lb = 0 * np.ones([dim, 1])  # 下边界
+ub = 1 * np.ones([dim, 1])  # 上边界
 
-X, ub, lb = initialBOA(pop, dim, ub, lb)
-print('X', X)
+# X, ub, lb = initialBOA(pop, dim, ub, lb)
+# print('X', X)
 
 def averFitness(BOA, function, number):
     s = 0
@@ -234,3 +258,8 @@ def averFitness(BOA, function, number):
 
 # GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, sphere)
 
+
+print(random.randint(0, 1))
+print(random.randint(0, 1))
+print(random.randint(0, 1))
+print(random.randint(0, 1))
