@@ -158,7 +158,6 @@ def BOAK(pop, dim, lb, ub, maxIter, fun, A):
     return GbestScore, GbestPositon, Curve
 
 def getInitSet(D, K, m):
-    
     pass
 
 def Kmeans(D,K,maxIter):
