@@ -12,11 +12,23 @@ def sphere(X):
     output = sum(np.square(X)/25)
     return output
 
-def a(D, X):
+def testKFun(X):
+    K = 0
+    for i in range(len(X)):
+        K += math.pow(2, i) * X[len(X) - 1 - i]
+    K = int(K)
+    print("K", K)
+
+
+# print('testKFun', testKFun([0, 1, 1, 1, 1, 1, 1, 1]))
+
+def kFun(D, X):
     m, n = np.shape(D)
     K = 0
     for i in range(len(X)):
         K += math.pow(2, i) * X[len(X) - 1 - i]
+    print('X', X)
+    print('K', K)
     K = int(K)
     initSet = set()
     curK = K
@@ -37,10 +49,8 @@ def a(D, X):
                 p = j
                 minDistance = distance(D[i], U[j])
         C[i] = p
-    dbs(D, C)
+    return -dbs(D, C)
 
-
-print(a([1, 1, 1, 1, 1, 1, 1, 1]))
 
 ''' 种群初始化函数 '''
 
@@ -64,11 +74,11 @@ def BorderCheck(X, ub, lb, pop, dim):
 
 
 '''计算适应度函数'''
-def CaculateFitness(X, fun):
+def CaculateFitness(X, fun, D):
     pop = X.shape[0]
     fitness = np.zeros([pop, 1])
     for i in range(pop):
-        fitness[i] = fun(X[i, :])
+        fitness[i] = fun(D, X[i, :])
     return fitness
 
 '''适应度排序'''
@@ -97,25 +107,22 @@ def initialBOA(pop, dim, ub, lb):
     for i in range(pop):
         for j in range(dim):
             a = random.randint(lb[j], ub[j])
-            while(1):
-                a = random.randint(lb[j], ub[j])
-                if a not in X[i]:
-                    break
+            # while(1):
+            #     a = random.randint(lb[j], ub[j])
+            #     if a not in X[i]:
+            #         break
             X[i, j] = a
     return X, lb, ub
   
-
-def merge(X, A):
-    pass
-   
-def BOAK(pop, dim, lb, ub, maxIter, fun, A):
+def BOAK(pop, dim, lb, ub, MaxIter, D):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
+    fun=kFun
     
     X, lb, ub = initialBOA(pop, dim, ub, lb)  # 初始化种群
-    # X,C = merge(X, A)
-    fitness = CaculateFitness(X, fun)  # 计算适应度值
+    print('X--', X)
+    fitness = CaculateFitness(X, fun, D)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
     GbestScore = fitness[0]
@@ -140,7 +147,7 @@ def BOAK(pop, dim, lb, ub, maxIter, fun, A):
                 Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
             #如果更优才更新
-            if(fun(X_new[i,:])<fitness[i]):
+            if(fun(D, X_new[i,:])<fitness[i]):
                 X[i,:] = X_new[i,:]
             
         X = X_new    
@@ -154,7 +161,6 @@ def BOAK(pop, dim, lb, ub, maxIter, fun, A):
         Curve[t] = GbestScore
         #更新sensory_modality
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
-
     return GbestScore, GbestPositon, Curve
 
 def getInitSet(D, K, m):
@@ -202,8 +208,6 @@ def Kmeans(D,K,maxIter):
     # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
 
     return U, C, maxIter-curIter, cluster
-
-
 
 def getMutate(pop, dim, X, ub, lb):
     mutant = np.zeros([pop, dim])
@@ -255,10 +259,5 @@ def averFitness(BOA, function, number):
     return s / number
 
 
-# GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, sphere)
+# GbestScore, GbestPositon, Curve = BOAK(pop, dim, lb, ub, MaxIter, kFun, )
 
-
-print(random.randint(0, 1))
-print(random.randint(0, 1))
-print(random.randint(0, 1))
-print(random.randint(0, 1))

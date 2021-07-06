@@ -1,3 +1,4 @@
+from KMeans.BOAKmeans import BOAK
 import math 
 import random
 import os
@@ -238,6 +239,7 @@ class UserBasedCF:
 
     def kMeans(self, K, itter):
         data = self.df.values
+
         U, C, itter, cluster, indexCluster = Kmeans(data, K, itter)
         for i, clusterItem in enumerate(cluster):
             print('index: {}, ClusterItem: {}'.format(i, indexCluster[i]))
@@ -249,6 +251,19 @@ class UserBasedCF:
             json.dump(records,f, indent=4)
             print("KmeansW 保存成功")
 
+    def calKOfKMeans(self):
+        pass
+    #   data = self.df.values
+    #   data = {
+    #         "data": data.tolist()
+    #   }
+    #   with open("./data.json","w") as f:
+    #     json.dump(data,f, indent=4)
+    #     print("data 保存成功")
+    #   GbestScore, GbestPositon, Curve = BOAK(50, 8, 0, 1, 500, data)
+    #   print('GBestScore, ', GbestScore)
+    #   print('GBestPostioon', GbestPositon)
+    #   print('Curve', Curve)
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -295,30 +310,48 @@ class Evalution:
     def MAE(self):
           return sum([abs(rui - pui) for u, i, rui, pui in self.records]) / len(self.records)
 
+def testKOnKMeans():
+    with open("./data.json",'r') as load_f:
+     data = json.load(load_f)
+     data = data["data"]
+     dim = 8
+     lb = 0 * np.ones([dim, 1])  # 下边界
+     ub = 1 * np.ones([dim, 1])  # 上边界
+     GbestScore, GbestPositon, Curve = BOAK(50, dim, lb, ub, 500, np.array(data))
+     print('GBestScore, ', GbestScore)
+     print('GBestPostioon', GbestPositon)
+     print('Curve', Curve)
+
+
+
 if __name__ == '__main__':
-  path = os.path.join('data', 'ratingsData.dat')
-  ucf = UserBasedCF(path)
+#   path = os.path.join('data', 'ratingsData.dat')
+#   ucf = UserBasedCF(path)
+#   ucf.calKOfKMeans()
 #   W = ucf.UserSimilarity()
 #   ucf.getAllUserPredition(10)
 #   record = ucf.getRecord()
+    testKOnKMeans()
 
-  ucf.kMeans(10, 100)
-  ucf.getKmeansPredition(10)
-  record = ucf.getRecord()
+  
+#   ucf.kMeans(10, 100)
+#   ucf.kMeans(10, 100)
+#   ucf.getKmeansPredition(10)
+#   record = ucf.getRecord()
 
-  start = datetime.datetime.now()
-  records = {
-      "record": ucf.records
-  }
+#   start = datetime.datetime.now()
+#   records = {
+#       "record": ucf.records
+#   }
 
-  with open("./record.json","w") as f:
-      json.dump(records,f, indent=4)
-      print("加载入文件完成...")
+#   with open("./record.json","w") as f:
+#       json.dump(records,f, indent=4)
+#       print("加载入文件完成...")
 
-#   with open("./record.json",'r') as load_f:
-#      records = json.load(load_f)
+# #   with open("./record.json",'r') as load_f:
+# #      records = json.load(load_f)
 
-e = Evalution(records["record"])
-print(e.MAE())
-end = datetime.datetime.now()
+# e = Evalution(records["record"])
+# print(e.MAE())
+# end = datetime.datetime.now()
 #   print("const time:" + (end -start).seconds + "s")

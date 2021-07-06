@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.datasets import load_iris
 from sklearn.metrics import davies_bouldin_score as dbs
-from DBI import DaviesBouldin, compute_DB_index
+# from DBI import DaviesBouldin, compute_DB_index
 
 
 # iris = load_iris()
