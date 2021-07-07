@@ -29,7 +29,7 @@ def kFun(D, X):
         K += math.pow(2, i) * X[len(X) - 1 - i]
     print('X', X)
     print('K', K)
-    K = int(K)
+    K = int(K) + 1  
     initSet = set()
     curK = K
     while(curK>0):  # 随机选取k个样本
@@ -49,7 +49,9 @@ def kFun(D, X):
                 p = j
                 minDistance = distance(D[i], U[j])
         C[i] = p
-    return -dbs(D, C)
+    a = dbs(D, C)
+    a = a if a > 0 else 0
+    return 1/a
 
 
 ''' 种群初始化函数 '''
@@ -121,7 +123,6 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
     fun=kFun
     
     X, lb, ub = initialBOA(pop, dim, ub, lb)  # 初始化种群
-    print('X--', X)
     fitness = CaculateFitness(X, fun, D)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
@@ -132,6 +133,7 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
         for i in range(pop):
+            print('fitness', fitness)
             FP = sensory_modality*(fitness**power_exponent)
             # 全局最优
             if random.random()>p:
@@ -152,7 +154,7 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
             
         X = X_new    
         X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
-        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness = CaculateFitness(X, fun, D)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
         X = SortPosition(X, sortIndex)  # 种群排序
         if fitness[0] <= GbestScore:  # 更新全局最优
