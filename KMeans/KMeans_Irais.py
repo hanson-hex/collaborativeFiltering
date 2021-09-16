@@ -115,6 +115,7 @@ max, min, aver = averFitness(Kmeans, X=Y, K=13, number = 30, maxIter = 10)
 U, C, iter, cluster = Kmeans(data, 3, 1)
 print('iter', iter)
 print('C', C)
+print('data', data)
 print(dbs(data, C))
 # print(compute_DB_index(cluster, U, 10))
 

@@ -3,6 +3,7 @@ import random
 import math
 from matplotlib import pyplot as plt
 from sklearn.metrics import davies_bouldin_score as dbs
+from sklearn.datasets import load_iris, load_wine
 
 '''优化函数'''
 
@@ -17,8 +18,6 @@ def testKFun(X):
     for i in range(len(X)):
         K += math.pow(2, i) * X[len(X) - 1 - i]
     K = int(K)
-    print("K", K)
-
 
 # print('testKFun', testKFun([0, 1, 1, 1, 1, 1, 1, 1]))
 
@@ -27,31 +26,31 @@ def kFun(D, X):
     K = 0
     for i in range(len(X)):
         K += math.pow(2, i) * X[len(X) - 1 - i]
-    print('X', X)
-    print('K', K)
     K = int(K) + 1  
     initSet = set()
     curK = K
+    if (K == 1):
+        return 2
+    print('m', m, n)
     while(curK>0):  # 随机选取k个样本
         randomInt = random.randint(0, m-1)
         if randomInt not in initSet:
             curK -= 1
             initSet.add(randomInt)
-    
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     # 计算样本到各均值向量的距离
     for i in range(m):
-        p = 0
-        minDistance = distance(D[i], U[0])
+        p = 0;
+        minDistance = distance(D[i], U[0]);
         for j in range(1, K):
             if distance(D[i], U[j]) < minDistance:
                 p = j
                 minDistance = distance(D[i], U[j])
         C[i] = p
     a = dbs(D, C)
-    a = a if a > 0 else 0
-    return 1/a
+    a = a if a > 0 else 2
+    return a
 
 
 ''' 种群初始化函数 '''
@@ -68,6 +67,7 @@ def initial(pop, dim, ub, lb):
 def BorderCheck(X, ub, lb, pop, dim):
     for i in range(pop):
         for j in range(dim):
+            X[i, j] = int(float(X[i, j]))
             if X[i, j] > ub[j]:
                 X[i, j] = ub[j]
             elif X[i, j] < lb[j]:
@@ -99,7 +99,7 @@ def SortPosition(X, index):
 def sensory_modality_NEW(x,Ngen):
     b = 0.025
     # b = 1
-    y=x+(b/(x*Ngen))
+    return x+(b/(x*Ngen))
    
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
@@ -109,10 +109,6 @@ def initialBOA(pop, dim, ub, lb):
     for i in range(pop):
         for j in range(dim):
             a = random.randint(lb[j], ub[j])
-            # while(1):
-            #     a = random.randint(lb[j], ub[j])
-            #     if a not in X[i]:
-            #         break
             X[i, j] = a
     return X, lb, ub
   
@@ -121,19 +117,21 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     fun=kFun
-    
     X, lb, ub = initialBOA(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun, D)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
+    print(X)
     GbestScore = fitness[0]
     GbestPositon = np.zeros([1,dim])
     GbestPositon[0,:] = X[0, :]
+    print('GBestScore',GbestScore)
+    print('GBestPosition', GbestPositon)
+    # return GbestScore, GbestPositon
     X_new = X
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
         for i in range(pop):
-            print('fitness', fitness)
             FP = sensory_modality*(fitness**power_exponent)
             # 全局最优
             if random.random()>p:
@@ -149,6 +147,7 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
                 Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
             #如果更优才更新
+            print('X_new', X_new[i, :])
             if(fun(D, X_new[i,:])<fitness[i]):
                 X[i,:] = X_new[i,:]
             
@@ -156,11 +155,14 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
         X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
         fitness = CaculateFitness(X, fun, D)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        print('ScortFitness', fitness, sortIndex)
         X = SortPosition(X, sortIndex)  # 种群排序
         if fitness[0] <= GbestScore:  # 更新全局最优
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
         Curve[t] = GbestScore
+        print('1GBestScore',GbestScore)
+        print('2GBestPosition', GbestPositon)
         #更新sensory_modality
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
@@ -245,8 +247,8 @@ def csAndSelect(pop, dim, X, mutate, fun, fitness):
 '''主函数 '''
 # 设置参数
 pop = 50  # 种群数量
-MaxIter = 500 # 最大迭代次数
-dim = 8 # 维度
+MaxIter = 5 # 最大迭代次数
+dim = 6 # 维度
 lb = 0 * np.ones([dim, 1])  # 下边界
 ub = 1 * np.ones([dim, 1])  # 上边界
 
@@ -261,5 +263,12 @@ def averFitness(BOA, function, number):
     return s / number
 
 
-# GbestScore, GbestPositon, Curve = BOAK(pop, dim, lb, ub, MaxIter, kFun, )
 
+print('111111')
+iris = load_iris()
+X = iris.data
+
+GbestScore, GbestPositon, Curve = BOAK(pop, dim, lb, ub, MaxIter, X)
+print('GBestScore', GbestScore)
+print('CbestPositon', GbestPositon)
+print('Curve', Curve)
