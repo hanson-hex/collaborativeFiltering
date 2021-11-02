@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import pandas as pd
 import math
 from matplotlib import pyplot as plt
 from sklearn.metrics import davies_bouldin_score as dbs
@@ -13,29 +14,13 @@ def sphere(X):
     output = sum(np.square(X)/25)
     return output
 
-def testKFun(X):
-    K = 0
-    for i in range(len(X)):
-        K += math.pow(2, i) * X[len(X) - 1 - i]
-    K = int(K)
 
 
-def kFun(D, X):
+def kFun(D, X, K):
     m, n = np.shape(D)
-    K = 0
-    for i in range(len(X)):
-        K += math.pow(2, i) * X[len(X) - 1 - i]
-    K = int(K) + 1  
-    initSet = set()
-    curK = K
-    if (K == 1):
-        return 2
-    while(curK>0):  # 随机选取k个样本
-        randomInt = random.randint(0, m-1)
-        if randomInt not in initSet:
-            curK -= 1
-            initSet.add(randomInt)
-    U = D[list(initSet), :]  # 均值向量,即质心
+    result = 0
+    X = [int(i) for i in X]
+    U = D[X, :]  # 均值向量,即质心
     C = np.zeros(m)
     # 计算样本到各均值向量的距离
     for i in range(m):
@@ -45,10 +30,8 @@ def kFun(D, X):
             if distance(D[i], U[j]) < minDistance:
                 p = j
                 minDistance = distance(D[i], U[j])
-        C[i] = p
-    a = dbs(D, C)
-    a = a if a > 0 else 2
-    return a
+        result += minDistance
+    return result
 
 
 ''' 种群初始化函数 '''
@@ -57,7 +40,7 @@ def initial(pop, dim, ub, lb):
     X = np.zeros([pop, dim])
     for i in range(pop):
         for j in range(dim):
-            X[i, j] = random.randint(lb[j], ub[j])
+            X[i, j] = int(random.randint(lb[j], ub[j] ))
     return X, lb, ub
 
 
@@ -72,13 +55,22 @@ def BorderCheck(X, ub, lb, pop, dim):
                 X[i, j] = lb[j]
     return X
 
+def BorderCheckItem(X, ub, lb, dim):
+    X = X.astype(int)
+    for j in range(dim):
+        if X[j] > ub[j]:
+            X[j] = ub[j]
+        elif X[j] < lb[j]:
+            X[j] = lb[j]
+    return X
+
 
 '''计算适应度函数'''
-def CaculateFitness(X, fun, D):
+def CaculateFitness(X, fun, D, k):
     pop = X.shape[0]
     fitness = np.zeros([pop, 1])
     for i in range(pop):
-        fitness[i] = fun(D, X[i, :])
+        fitness[i] = fun(D, X[i, :], k)
     return fitness
 
 '''适应度排序'''
@@ -102,29 +94,32 @@ def sensory_modality_NEW(x,Ngen):
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
    
-def initialBOA(pop, dim, ub, lb):
-    X = np.zeros([pop, dim])
+def initialBOA(pop, k, ub, lb):
+    X = np.zeros([pop, k])
     for i in range(pop):
-        for j in range(dim):
-            a = random.randint(lb[j], ub[j])
-            X[i, j] = a
+        curK = k
+        while (curK > 0):
+                randomInt = random.randint(lb[0], ub[0])
+                if randomInt not in X[i]:
+                    X[i, (k - curK)] = randomInt
+                    curK -= 1
     return X, lb, ub
   
-def BOAK(pop, dim, lb, ub, MaxIter, D):
+def BOAK(pop, k, MaxIter, D):
+    lb = 0 * np.ones([k, 1])  # 下边界
+    ub =  (len(D) - 1)* np.ones([k, 1])  # 上边界
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     fun=kFun
-    X, lb, ub = initialBOA(pop, dim, ub, lb)  # 初始化种群
-    fitness = CaculateFitness(X, fun, D)  # 计算适应度值
+    X, lb, ub = initialBOA(pop, k, ub, lb)  # 初始化种群
+    fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
-    print(X)
+
     GbestScore = fitness[0]
-    GbestPositon = np.zeros([1,dim])
+    GbestPositon = np.zeros([1, k])
     GbestPositon[0,:] = X[0, :]
-    print('GBestScore',GbestScore)
-    print('GBestPosition', GbestPositon)
     # return GbestScore, GbestPositon
     X_new = X
     Curve = np.zeros([MaxIter, 1])
@@ -145,22 +140,19 @@ def BOAK(pop, dim, lb, ub, MaxIter, D):
                 Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
             #如果更优才更新
-            print('X_new', X_new[i, :])
-            if(fun(D, X_new[i,:])<fitness[i]):
+            X_new[i, :] = BorderCheckItem(X_new[i, :], ub, lb, k)
+            if(fun(D, X_new[i,:], k)<fitness[i]):
                 X[i,:] = X_new[i,:]
             
         X = X_new    
-        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
-        fitness = CaculateFitness(X, fun, D)  # 计算适应度值
+        X = BorderCheck(X, ub, lb, pop, k)  # 边界检测
+        fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
-        print('ScortFitness', fitness, sortIndex)
         X = SortPosition(X, sortIndex)  # 种群排序
         if fitness[0] <= GbestScore:  # 更新全局最优
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
         Curve[t] = GbestScore
-        print('1GBestScore',GbestScore)
-        print('2GBestPosition', GbestPositon)
         #更新sensory_modality
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
@@ -169,7 +161,9 @@ def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    initSet = getInitSet(D, K, m) 
+    GbestScore, GbestPositon, Curve = BOAK(pop, 28, MaxIter, D)
+    GbestPositon  = GbestPositon.astype(int)
+    initSet = GbestPositon[0]
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
@@ -208,59 +202,47 @@ def Kmeans(D,K,maxIter):
 
     return U, C, maxIter-curIter, cluster
 
-def getMutate(pop, dim, X, ub, lb):
-    mutant = np.zeros([pop, dim])
-    F = 0.2 # 变异因子
-    for i in range(pop):
-        r0, r1, r2 = 0, 0, 0
-        while r0 == r1 or r1 == r2 or r0 == r2 or r0 == i:
-            r0 = random.randint(0, pop-1)
-            r1 = random.randint(0, pop-1)
-            r2 = random.randint(0, pop-1)
-        mutant[i,:]= X[r0,:] + (X[r1,:] - X[r2,:]) * F
-        for t in range(dim):
-            if mutant[i, t] >= ub[t] or mutant[i, t] <= lb[t]:
-                mutant[i, t] = random.uniform(lb[t], ub[t])
-    return mutant
-
-
-def csAndSelect(pop, dim, X, mutate, fun, fitness):
-   CR = 0.1
-   X_new = X
-   for i in range(pop):
-        Jrand = random.randint(0, dim)
-        for j in range(dim):
-            if random.random() > CR and j != Jrand:
-                mutate[i, j] = X[i, j]
-            tmp = fun(mutate[i,:])
-            if tmp < fitness[i]:
-                X_new[i,:] = mutate[i,:]
-   return X_new
-   
-    
 
 '''主函数 '''
 # 设置参数
 pop = 50  # 种群数量
 MaxIter = 5 # 最大迭代次数
-dim = 6 # 维度
-lb = 0 * np.ones([dim, 1])  # 下边界
-ub = 1 * np.ones([dim, 1])  # 上边界
+dim = 28 # 维度
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
 # print('X', X)
 
-def averFitness(BOA, function, number):
-    s = 0
+def averFitness(func, X, K, number, maxIter):
+    s = []
     for i in range(number):
-        GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, function)
-        s += GbestScore
-    return s / number
+        U, C, iter, cluster = func(X, K, maxIter)
+        s.append(dbs(X, C))
+    return max(s), min(s), sum(s) / number
+
 
 iris = load_iris()
 X = iris.data
 
-GbestScore, GbestPositon, Curve = BOAK(pop, dim, lb, ub, MaxIter, X)
+wine = load_wine()
+Y = wine.data
+
+dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
+Z = dataset.values
+
+
+# GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, X)
+# print('GBestScore', GbestScore)
+# print('CbestPositon', GbestPositon)
+# print('Curve', Curve)
+
+# GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, Y)
+# print('GBestScore', GbestScore)
+# print('CbestPositon', GbestPositon)
+# print('Curve', Curve)
+
+GbestScore, GbestPositon, Curve = BOAK(pop, 28, MaxIter, Z)
+
+
 print('GBestScore', GbestScore)
 print('CbestPositon', GbestPositon)
 print('Curve', Curve)

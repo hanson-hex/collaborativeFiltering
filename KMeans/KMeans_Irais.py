@@ -1,22 +1,24 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-# from sklearn.cluster import KMeans
 from sklearn.datasets import load_iris, load_wine
 from sklearn.metrics import davies_bouldin_score as dbs
 from DBI import compute_DB_index
-import math
+import math 
 
 dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
 data = dataset.values
 
+dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
+Z = dataset.values
+
 iris = load_iris()
 X = iris.data
-print('X', X)
+# print('X', X)
 
 wine = load_wine()
 Y = wine.data
-print("Y", Y)
+# print("Y", Y)
 
 # %%
 
@@ -30,14 +32,23 @@ def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    initSet = set()
-    curK = K
-    while(curK>0):  # 随机选取k个样本
-        randomInt = random.randint(0, m-1)
-        if randomInt not in initSet:
-            curK -= 1
-            initSet.add(randomInt)
+    # initSet = set()
+    # curK = K
+    # while(curK>0):  # 随机选取k个样本
+    #     randomInt = random.randint(0, m-1)
+    #     if randomInt not in initSet:
+    #         curK -= 1
+    #         initSet.add(randomInt)
     
+    # initSet = (124, 63, 12)
+    # initSet = (88, 63, 8)
+    # initSet =  (48, 578,24, 221, 395,  654,  489,  367,  250,  706,  302,  162, 364, 245, 333, 525, 185, 477,  438, 68, 120, 442, 65, 640, 460, 598, 128, 652)
+    # initSet = (79, 147, 0)
+    # initSet = (69, 84, 13)
+    # initSet = (125, 328,100, 151, 239, 26, 43, 706,108, 553, 455,194, 409, 13, 497, 337, 158, 557, 119, 659, 598, 82, 192, 182, 391, 351, 464, 339)
+    # initSet = (23, 61, 139)
+    # initSet = (51, 4, 151)
+    initSet = (483, 195, 432, 340, 171, 385, 116, 45, 491, 286, 519, 112, 26, 344, 557, 506, 593, 677, 451, 499, 248, 550, 296, 325, 115, 490, 367, 177)
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
@@ -76,8 +87,6 @@ def Kmeans(D,K,maxIter):
 
     return U, C, maxIter-curIter, cluster
 
-def Kmeans1():
-    pass
 
 def averFitness(func, X, K, number, maxIter):
     s = []
@@ -88,16 +97,25 @@ def averFitness(func, X, K, number, maxIter):
 
 # U, C, iter, cluster = MyKmeans(X, 4, 10)
 
-# max, min, aver = averFitness(Kmeans, X=X, K=4, number = 30, maxIter = 10)
+# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-max, min, aver = averFitness(Kmeans, X=Y, K=13, number = 30, maxIter = 10)
+# max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 30, maxIter = 10)
 
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
+
+max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
+
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
+
+
+
 # print('iter', iter)
 # print('C', C)
 # print(compute_DB_index(cluster, U, 3))
@@ -112,11 +130,11 @@ max, min, aver = averFitness(Kmeans, X=Y, K=13, number = 30, maxIter = 10)
 # print(DaviesBouldin(Y, C))
 
 
-U, C, iter, cluster = Kmeans(data, 3, 1)
-print('iter', iter)
-print('C', C)
-print('data', data)
-print(dbs(data, C))
+# U, C, iter, cluster = Kmeans(data, 3, 1)
+# print('iter', iter)
+# print('C', C)
+# print('data', data)
+# print(dbs(data, C))
 # print(compute_DB_index(cluster, U, 10))
 
 
