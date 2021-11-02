@@ -105,9 +105,10 @@ def initialBOA(pop, k, ub, lb):
                     curK -= 1
     return X, lb, ub
   
-def BOAK(pop, k, MaxIter, D):
+def BOAK(pop, k, D):
     lb = 0 * np.ones([k, 1])  # 下边界
     ub =  (len(D) - 1)* np.ones([k, 1])  # 上边界
+    MaxIter = 5
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
@@ -157,11 +158,65 @@ def BOAK(pop, k, MaxIter, D):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
 
+def BOAKA(pop, k, D):
+    lb = 0 * np.ones([k, 1])  # 下边界
+    ub =  (len(D) - 1)* np.ones([k, 1])  # 上边界
+    MaxIter = 5
+    p=0.8 #probabibility switch
+    power_exponent=0.1  # a = 0.1
+    sensory_modality=0.01 # c = 0.01
+    fun=kFun
+    X, lb, ub = initialBOA(pop, k, ub, lb)  # 初始化种群
+    fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
+    fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+    X = SortPosition(X, sortIndex)  # 种群排序
+
+    GbestScore = fitness[0]
+    GbestPositon = np.zeros([1, k])
+    GbestPositon[0,:] = X[0, :]
+    # return GbestScore, GbestPositon
+    X_new = X
+    Curve = np.zeros([MaxIter, 1])
+    for t in range(MaxIter):
+        for i in range(pop):
+            FP = sensory_modality*(fitness**power_exponent)
+            # 全局最优
+            if random.random()>p:
+                dis = random.random()*random.random()*GbestPositon - X[i,:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            else:
+                # Find random butterflies in the neighbourhood
+                #epsilon = random.random()
+                Temp = range(pop)
+                JK = random.sample(Temp,pop)
+                dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            #如果更优才更新
+            X_new[i, :] = BorderCheckItem(X_new[i, :], ub, lb, k)
+            if(fun(D, X_new[i,:], k)<fitness[i]):
+                X[i,:] = X_new[i,:]
+            
+        X = X_new    
+        X = BorderCheck(X, ub, lb, pop, k)  # 边界检测
+        fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+        Curve[t] = GbestScore
+        #更新sensory_modality
+        sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
+    return GbestScore, GbestPositon, Curve
+
+
 def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    GbestScore, GbestPositon, Curve = BOAK(pop, 28, MaxIter, D)
+    GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
     GbestPositon  = GbestPositon.astype(int)
     initSet = GbestPositon[0]
     U = D[list(initSet), :]  # 均值向量,即质心
@@ -205,8 +260,7 @@ def Kmeans(D,K,maxIter):
 
 '''主函数 '''
 # 设置参数
-pop = 50  # 种群数量
-MaxIter = 5 # 最大迭代次数
+pop = 10  # 种群数量
 dim = 28 # 维度
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
@@ -229,6 +283,20 @@ Y = wine.data
 dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
 Z = dataset.values
 
+# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
+
+# max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 10, maxIter = 10)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
+
+max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
 
 # GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, X)
 # print('GBestScore', GbestScore)
@@ -240,9 +308,9 @@ Z = dataset.values
 # print('CbestPositon', GbestPositon)
 # print('Curve', Curve)
 
-GbestScore, GbestPositon, Curve = BOAK(pop, 28, MaxIter, Z)
+# GbestScore, GbestPositon, Curve = BOAK(pop, 28,5, Z)
 
 
-print('GBestScore', GbestScore)
-print('CbestPositon', GbestPositon)
-print('Curve', Curve)
+# print('GBestScore', GbestScore)
+# print('CbestPositon', GbestPositon)
+# print('Curve', Curve)
