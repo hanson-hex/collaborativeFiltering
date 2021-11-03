@@ -32,26 +32,18 @@ def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    # initSet = set()
-    # curK = K
-    # while(curK>0):  # 随机选取k个样本
-    #     randomInt = random.randint(0, m-1)
-    #     if randomInt not in initSet:
-    #         curK -= 1
-    #         initSet.add(randomInt)
+    initSet = set()
+    curK = K
+    while(curK>0):  # 随机选取k个样本
+        randomInt = random.randint(0, m-1)
+        if randomInt not in initSet:
+            curK -= 1
+            initSet.add(randomInt)
     
-    # initSet = (124, 63, 12)
-    # initSet = (88, 63, 8)
-    # initSet =  (48, 578,24, 221, 395,  654,  489,  367,  250,  706,  302,  162, 364, 245, 333, 525, 185, 477,  438, 68, 120, 442, 65, 640, 460, 598, 128, 652)
-    # initSet = (79, 147, 0)
-    # initSet = (69, 84, 13)
-    # initSet = (125, 328,100, 151, 239, 26, 43, 706,108, 553, 455,194, 409, 13, 497, 337, 158, 557, 119, 659, 598, 82, 192, 182, 391, 351, 464, 339)
-    # initSet = (23, 61, 139)
-    # initSet = (51, 4, 151)
-    initSet = (483, 195, 432, 340, 171, 385, 116, 45, 491, 286, 519, 112, 26, 344, 557, 506, 593, 677, 451, 499, 248, 550, 296, 325, 115, 490, 367, 177)
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
+    dbsList = []
     while curIter > 0:
         curIter -= 1
         # 计算样本到各均值向量的距离
@@ -71,6 +63,7 @@ def Kmeans(D,K,maxIter):
             cnt[int(C[i])] += 1
 
         changed = 0
+        dbsList.add(dbs(D, C))
         # 判断质心是否发生变化，如果发生变化则继续迭代，否则结束
         for i in range(K):
             newU[i] /= cnt[i]
@@ -81,11 +74,11 @@ def Kmeans(D,K,maxIter):
         if changed == 0:
             cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
             # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            return U, C, maxIter-curIter, cluster
+            return U, C, maxIter-curIter, cluster, dbsList
     cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
     # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
 
-    return U, C, maxIter-curIter, cluster
+    return U, C, maxIter-curIter, cluster, dbsList
 
 
 def averFitness(func, X, K, number, maxIter):
@@ -95,7 +88,17 @@ def averFitness(func, X, K, number, maxIter):
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
-# U, C, iter, cluster = MyKmeans(X, 4, 10)
+U, C, iter, cluster, dbsList = Kmeans(X, 4, 10)
+
+# 绘制适应度曲线
+plt.figure(1)
+plt.plot(dbsList, 'r-', linewidth=2)
+plt.xlabel('Iteration', fontsize='medium')
+plt.ylabel("Fitness", fontsize='medium')
+plt.legend(["Kmeans"])
+plt.grid()
+plt.title('BOA', fontsize='large')
+plt.show()
 
 # max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
 # print('k-means最大值：', max)

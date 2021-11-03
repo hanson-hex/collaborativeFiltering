@@ -178,13 +178,14 @@ def BOAKA(pop, k, D):
     X_new = X
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
+        a = 2*math.exp(-t/MaxIter)
         for i in range(pop):
             FP = sensory_modality*(fitness**power_exponent)
             # 全局最优
             if random.random()>p:
                 dis = random.random()*random.random()*GbestPositon - X[i,:]
                 Temp = np.matrix(dis*FP[0,:])
-                X_new[i,:] = X[i,:] + Temp[0,:]
+                X_new[i,:] = a*X[i,:] + Temp[0,:]
             else:
                 # Find random butterflies in the neighbourhood
                 #epsilon = random.random()
@@ -216,7 +217,8 @@ def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
+    # GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
+    GbestScore, GbestPositon, Curve = BOAKA(pop, K, D)
     GbestPositon  = GbestPositon.astype(int)
     initSet = GbestPositon[0]
     U = D[list(initSet), :]  # 均值向量,即质心
@@ -283,20 +285,20 @@ Y = wine.data
 dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
 Z = dataset.values
 
-# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
-# print('k-means最大值：', max)
-# print('k-means最小值:', min)
-# print('k-means平均值：', aver)
+max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 10, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
-print('k-means最大值：', max)
-print('k-means最小值:', min)
-print('k-means平均值：', aver)
+# max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
 
 # GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, X)
 # print('GBestScore', GbestScore)
