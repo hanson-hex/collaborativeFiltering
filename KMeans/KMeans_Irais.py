@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 from sklearn.datasets import load_iris, load_wine
 from sklearn.metrics import davies_bouldin_score as dbs
 from DBI import compute_DB_index
@@ -43,7 +44,7 @@ def Kmeans(D,K,maxIter):
     U = D[list(initSet), :]  # 均值向量,即质心
     C = np.zeros(m)
     curIter = maxIter  # 最大的迭代次数
-    dbsList = []
+    dbsList = [float('inf')]
     while curIter > 0:
         curIter -= 1
         # 计算样本到各均值向量的距离
@@ -61,9 +62,8 @@ def Kmeans(D,K,maxIter):
         for i in range(m):
             newU[int(C[i])] += D[i]
             cnt[int(C[i])] += 1
-
+        dbsList.append(dbs(D, C))
         changed = 0
-        dbsList.add(dbs(D, C))
         # 判断质心是否发生变化，如果发生变化则继续迭代，否则结束
         for i in range(K):
             newU[i] /= cnt[i]
@@ -74,6 +74,8 @@ def Kmeans(D,K,maxIter):
         if changed == 0:
             cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
             # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
+            lastList = [dbsList[len(dbsList) - 1] for i in range(curIter)]
+            dbsList = dbsList + lastList
             return U, C, maxIter-curIter, cluster, dbsList
     cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
     # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
@@ -84,26 +86,29 @@ def Kmeans(D,K,maxIter):
 def averFitness(func, X, K, number, maxIter):
     s = []
     for i in range(number):
-        U, C, iter, cluster = func(X, K, maxIter)
+        U, C, iter, cluster, dbsLists = func(X, K, maxIter)
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
-U, C, iter, cluster, dbsList = Kmeans(X, 4, 10)
+U, C, iter, cluster, dbsList = Kmeans(X, 3, 100)
+print('iter', iter)
+
 
 # 绘制适应度曲线
 plt.figure(1)
+print('dbsList', dbsList[len(dbsList) - 1])
 plt.plot(dbsList, 'r-', linewidth=2)
 plt.xlabel('Iteration', fontsize='medium')
-plt.ylabel("Fitness", fontsize='medium')
+plt.ylabel("DBI指数", fontsize='medium')
 plt.legend(["Kmeans"])
 plt.grid()
-plt.title('BOA', fontsize='large')
+plt.title('K-means算法', fontsize='large')
 plt.show()
 
-# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
-# print('k-means最大值：', max)
-# print('k-means最小值:', min)
-# print('k-means平均值：', aver)
+max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 30, maxIter = 10)
 
@@ -111,11 +116,11 @@ plt.show()
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
+# max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
 
-print('k-means最大值：', max)
-print('k-means最小值:', min)
-print('k-means平均值：', aver)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
 
 
 

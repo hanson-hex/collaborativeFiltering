@@ -217,8 +217,8 @@ def Kmeans(D,K,maxIter):
     m, n = np.shape(D)
     if K >= m:
         return D
-    # GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
-    GbestScore, GbestPositon, Curve = BOAKA(pop, K, D)
+    GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
+    # GbestScore, GbestPositon, Curve = BOAKA(pop, K, D)
     GbestPositon  = GbestPositon.astype(int)
     initSet = GbestPositon[0]
     U = D[list(initSet), :]  # 均值向量,即质心
@@ -262,7 +262,7 @@ def Kmeans(D,K,maxIter):
 
 '''主函数 '''
 # 设置参数
-pop = 10  # 种群数量
+pop = 5  # 种群数量
 dim = 28 # 维度
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
