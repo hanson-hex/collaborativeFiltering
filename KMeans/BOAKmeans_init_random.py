@@ -285,15 +285,15 @@ Y = wine.data
 dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
 Z = dataset.values
 
-max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
-print('k-means最大值：', max)
-print('k-means最小值:', min)
-print('k-means平均值：', aver)
-
-# max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 10, maxIter = 10)
+# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
+
+max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 30, maxIter = 10)
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
