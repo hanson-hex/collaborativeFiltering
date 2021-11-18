@@ -2,27 +2,131 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from sklearn import preprocessing
+from sklearn.compose import ColumnTransformer
 from sklearn.datasets import load_iris, load_wine
 from sklearn.metrics import davies_bouldin_score as dbs
+# from sklearn.metrics import silhouette_score as dbs
+# from sklearn.metrics import calinski_harabaz_score as dbs
+# from sklearn.metrics import adjusted_rand_score as dbs
 from DBI import compute_DB_index
 import math 
 
-dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
-data = dataset.values
+# dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
+# data = dataset.values
 
-dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
-Z = dataset.values
+# dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
+# Z = dataset.values
 
-iris = load_iris()
-X = iris.data
+# iris = load_iris()
+# X = iris.data
 # print('X', X)
 
-wine = load_wine()
-Y = wine.data
+# wine = load_wine()
+# X = wine.data
 # print("Y", Y)
+
+# dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
+# X = dataset.values
+
+class MultiColumnLabelEncoder:
+
+    def __init__(self, columns=None):
+        self.columns = columns # array of column names to encode
+
+
+    def fit(self, X, y=None):
+        self.encoders = {}
+        columns = X.columns if self.columns is None else self.columns
+        for col in columns:
+            self.encoders[col] = preprocessing.LabelEncoder().fit(X[col])
+        return self
+
+
+    def transform(self, X):
+        output = X.copy()
+        columns = X.columns if self.columns is None else self.columns
+        for col in columns:
+            output[col] = self.encoders[col].transform(X[col])
+        return output
+
+
+    def fit_transform(self, X, y=None):
+        return self.fit(X,y).transform(X)
+
+
+    def inverse_transform(self, X):
+        output = X.copy()
+        columns = X.columns if self.columns is None else self.columns
+        for col in columns:
+            output[col] = self.encoders[col].inverse_transform(X[col])
+        return output
+
+dataset = pd.read_csv('./Frogs_MFCCs.csv', delimiter=",")
+X = dataset.values
+encoder = preprocessing.LabelEncoder()
+X[:, 22] = encoder.fit_transform(X[:, 22])
+X[:, 23] = encoder.fit_transform(X[:, 23])
+X[:, 24] = encoder.fit_transform(X[:, 24])
+K = 4
+print('X', X)
+
+# ct = ColumnTransformer([("Name_Of_Your_Step", preprocessing.LabelEncoder(),[21, 22, 23])], remainder="passthrough")
+# y = ct.fit_transform(X)
+
+# print('Y', y)
 
 # %%
 
+def kmeans(data,k, maxIter):
+    def _distance(p1,p2):
+        """
+        Return Eclud distance between two points.
+        p1 = np.array([0,0]), p2 = np.array([1,1]) => 1.414
+        """
+        tmp = np.sum((p1-p2)**2)
+        return np.sqrt(tmp)
+    def _rand_center(data,k):
+        """Generate k center within the range of data set."""
+        n = data.shape[1] # features
+        centroids = np.zeros((k,n)) # init with (0,0)....
+        for i in range(n):
+            dmin, dmax = np.min(data[:,i]), np.max(data[:,i])
+            centroids[:,i] = dmin + (dmax - dmin) * np.random.rand(k)
+        return centroids
+    
+    def _converged(centroids1, centroids2):
+        
+        # if centroids not changed, we say 'converged'
+         set1 = set([tuple(c) for c in centroids1])
+         set2 = set([tuple(c) for c in centroids2])
+         return (set1 == set2)
+        
+    
+    n = data.shape[0] # number of entries
+    centroids = _rand_center(data,k)
+    label = np.zeros(n,dtype=np.int) # track the nearest centroid
+    assement = np.zeros(n) # for the assement of our model
+    converged = False
+    curIter = maxIter  # 最大的迭代次数
+    while not converged:
+        curIter -= 1
+        old_centroids = np.copy(centroids)
+        for i in range(n):
+            # determine the nearest centroid and track it with label
+            min_dist, min_index = np.inf, -1
+            for j in range(k):
+                dist = _distance(data[i],centroids[j])
+                if dist < min_dist:
+                    min_dist, min_index = dist, j
+                    label[i] = j
+            assement[i] = _distance(data[i],centroids[label[i]])**2
+        
+        # update centroid
+        for m in range(k):
+            centroids[m] = np.mean(data[label==m],axis=0)
+        converged = _converged(old_centroids,centroids)    
+    return centroids, label, np.sum(assement), maxIter - curIter, '1'
 
 
 import random
@@ -60,7 +164,7 @@ def Kmeans(D,K,maxIter):
         cnt = np.zeros(K)
 
         for i in range(m):
-            newU[int(C[i])] += D[i]
+            newU[int(C[i])] = newU[int(C[i])] + D[i]
             cnt[int(C[i])] += 1
         dbsList.append(dbs(D, C))
         changed = 0
@@ -90,27 +194,41 @@ def averFitness(func, X, K, number, maxIter):
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
-U, C, iter, cluster, dbsList = Kmeans(X, 3, 100)
+centroids, label, assement, iter = kmeans(X, K, 100)
+print('kmeans1')
+print(dbs(X, label))
+print('iter', iter)
+
+km = KMeans(n_clusters=K)
+km.fit(X)
+centers = km.cluster_centers_
+print('kmeans2')
+print(dbs(X, km.labels_))
+
+U, C, iter, cluster, dbsList = Kmeans(X, K, 100)
+print('kmeans3')
+print('dbsList', dbsList[len(dbsList) - 1])
 print('iter', iter)
 
 
-# 绘制适应度曲线
-plt.figure(1)
-print('dbsList', dbsList[len(dbsList) - 1])
-plt.plot(dbsList, 'r-', linewidth=2)
-plt.xlabel('Iteration', fontsize='medium')
-plt.ylabel("DBI指数", fontsize='medium')
-plt.legend(["Kmeans"])
-plt.grid()
-plt.title('K-means算法', fontsize='large')
-plt.show()
 
-# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+# 绘制适应度曲线
+# plt.figure(1)
+# print('dbsList', dbsList[len(dbsList) - 1])
+# plt.plot(dbsList, 'r-', linewidth=2)
+# plt.xlabel('Iteration', fontsize='medium')
+# plt.ylabel("DBI", fontsize='medium')
+# plt.legend(["Kmeans"])
+# plt.grid()
+# plt.title('K-means', fontsize='large')
+# plt.show()
+
+# max, min, aver = averFitness(Kmeans, X=X, K = K, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 30, maxIter = 10)
+max, min, aver = averFitness(kmeans, X=X, K=K, number = 30, maxIter = 10)
 
 print('k-means最大值：', max)
 print('k-means最小值:', min)
@@ -136,14 +254,6 @@ print('k-means平均值：', aver)
 # print(dbs(Y, C))
 # print(compute_DB_index(cluster, U, 3))
 # print(DaviesBouldin(Y, C))
-
-
-# U, C, iter, cluster = Kmeans(data, 3, 1)
-# print('iter', iter)
-# print('C', C)
-# print('data', data)
-# print(dbs(data, C))
-# print(compute_DB_index(cluster, U, 10))
 
 
 # f1 = plt.figure(1)

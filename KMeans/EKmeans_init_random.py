@@ -268,7 +268,6 @@ MaxIter = 5 # 最大迭代次数
 dim = 28 # 维度
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
-# print('X', X)
 
 def averFitness(func, X, K, number, maxIter):
     s = []

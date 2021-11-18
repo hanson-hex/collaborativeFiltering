@@ -121,7 +121,6 @@ def BOAK(pop, k, D):
     GbestScore = fitness[0]
     GbestPositon = np.zeros([1, k])
     GbestPositon[0,:] = X[0, :]
-    # return GbestScore, GbestPositon
     X_new = X
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
@@ -218,7 +217,6 @@ def Kmeans(D,K,maxIter):
     if K >= m:
         return D
     GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
-    # GbestScore, GbestPositon, Curve = BOAKA(pop, K, D)
     GbestPositon  = GbestPositon.astype(int)
     initSet = GbestPositon[0]
     U = D[list(initSet), :]  # 均值向量,即质心
