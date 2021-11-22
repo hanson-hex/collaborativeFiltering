@@ -19,9 +19,7 @@ def sphere(X):
 def kFun(D, X, K):
     m, n = np.shape(D)
     result = 0
-    X = [int(i) for i in X]
-    U = D[X, :]  # 均值向量,即质心
-    C = np.zeros(m)
+    U = X # 均值向量,即质心
     # 计算样本到各均值向量的距离
     for i in range(m):
         p = 0;
@@ -40,7 +38,7 @@ def initial(pop, dim, ub, lb):
     X = np.zeros([pop, dim])
     for i in range(pop):
         for j in range(dim):
-            X[i, j] = int(random.randint(lb[j], ub[j] ))
+            X[i, j] = random.random() * (ub[j] - lb[j]) + lb[j]
     return X, lb, ub
 
 
@@ -48,20 +46,10 @@ def initial(pop, dim, ub, lb):
 def BorderCheck(X, ub, lb, pop, dim):
     for i in range(pop):
         for j in range(dim):
-            X[i, j] = int(float(X[i, j]))
             if X[i, j] > ub[j]:
                 X[i, j] = ub[j]
             elif X[i, j] < lb[j]:
                 X[i, j] = lb[j]
-    return X
-
-def BorderCheckItem(X, ub, lb, dim):
-    X = X.astype(int)
-    for j in range(dim):
-        if X[j] > ub[j]:
-            X[j] = ub[j]
-        elif X[j] < lb[j]:
-            X[j] = lb[j]
     return X
 
 
@@ -94,32 +82,26 @@ def sensory_modality_NEW(x,Ngen):
 def distance(x1, x2):  # 计算距离
     return np.sqrt(np.sum(np.square(np.array(x1)-np.array(x2))))
    
-def initialBOA(pop, k, ub, lb):
-    X = np.zeros([pop, k])
-    for i in range(pop):
-        curK = k
-        while (curK > 0):
-                randomInt = random.randint(lb[0], ub[0])
-                if randomInt not in X[i]:
-                    X[i, (k - curK)] = randomInt
-                    curK -= 1
-    return X, lb, ub
   
 def BOAK(pop, k, D):
-    lb = 0 * np.ones([k, 1])  # 下边界
-    ub =  (len(D) - 1)* np.ones([k, 1])  # 上边界
+    m, dim = np.shape(D)
+    lb = np.zeros(dim * k)  # 下边界
+    ub =  np.zeros(dim * k)  # 上边界
+    for i in range(len(D[0])):
+        lb[i] = min([row[i] for row in D])
+        ub[i] = max([row[i] for row in D])
     MaxIter = 5
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     fun=kFun
-    X, lb, ub = initialBOA(pop, k, ub, lb)  # 初始化种群
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
 
     GbestScore = fitness[0]
-    GbestPositon = np.zeros([1, k])
+    GbestPositon = np.zeros([1, dim])
     GbestPositon[0,:] = X[0, :]
     X_new = X
     Curve = np.zeros([MaxIter, 1])
@@ -140,12 +122,11 @@ def BOAK(pop, k, D):
                 Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
             #如果更优才更新
-            X_new[i, :] = BorderCheckItem(X_new[i, :], ub, lb, k)
             if(fun(D, X_new[i,:], k)<fitness[i]):
                 X[i,:] = X_new[i,:]
             
         X = X_new    
-        X = BorderCheck(X, ub, lb, pop, k)  # 边界检测
+        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
         fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
         X = SortPosition(X, sortIndex)  # 种群排序
@@ -212,56 +193,70 @@ def BOAKA(pop, k, D):
     return GbestScore, GbestPositon, Curve
 
 
-def Kmeans(D,K,maxIter):
-    m, n = np.shape(D)
-    if K >= m:
-        return D
-    GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
-    GbestPositon  = GbestPositon.astype(int)
-    initSet = GbestPositon[0]
-    U = D[list(initSet), :]  # 均值向量,即质心
-    C = np.zeros(m)
+def Kmeans(data,k,maxIter):
+    m, n = np.shape(data)
+    GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
+    U = GbestPositon[0]
+    def _distance(p1,p2):
+        """
+        Return Eclud distance between two points.
+        p1 = np.array([0,0]), p2 = np.array([1,1]) => 1.414
+        """
+        return np.sqrt(np.sum(np.square(np.array(p1)-np.array(p2))))
+        # tmp = np.sum((p1-p2)**2)
+        # return np.sqrt(tmp)
+    def _rand_center(data,k):
+        """Generate k center within the range of data set."""
+        n = data.shape[1] # features
+        centroids = np.zeros((k,n)) # init with (0,0)....
+        for i in range(n):
+            dmin, dmax = np.min(data[:,i]), np.max(data[:,i])
+            centroids[:,i] = dmin + (dmax - dmin) * np.random.rand(k)
+        return centroids
+    
+    def _converged(centroids1, centroids2):
+        
+        # if centroids not changed, we say 'converged'
+         set1 = set([tuple(c) for c in centroids1])
+         set2 = set([tuple(c) for c in centroids2])
+         return (set1 == set2)
+        
+    n = data.shape[0] # number of entries
+    print('GbestPosition', GbestPositon[0])
+    centroids = GbestPositon[0]
+    label = np.zeros(n,dtype=np.int) # track the nearest centroid
+    assement = np.zeros(n) # for the assement of our model
+
+    converged = False
     curIter = maxIter  # 最大的迭代次数
+    dbsList = [float('inf')]
     while curIter > 0:
-        curIter -= 1
-        # 计算样本到各均值向量的距离
-        for i in range(m):
-            p = 0
-            minDistance = distance(D[i], U[0])
-            for j in range(1, K):
-                if distance(D[i], U[j]) < minDistance:
-                    p = j
-                    minDistance = distance(D[i], U[j])
-            C[i] = p
-        newU = np.zeros((K, n))
-        cnt = np.zeros(K)
-
-        for i in range(m):
-            newU[int(C[i])] += D[i]
-            cnt[int(C[i])] += 1
-
-        changed = 0
-        # 判断质心是否发生变化，如果发生变化则继续迭代，否则结束
-        for i in range(K):
-            newU[i] /= cnt[i]
-            for j in range(n):
-                if U[i, j] != newU[i, j]:
-                    changed = 1
-                    U[i, j] = newU[i, j]
-        if changed == 0:
-            cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            return U, C, maxIter-curIter, cluster
-    cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
-    # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-
-    return U, C, maxIter-curIter, cluster
+        curIter -= 1 
+        old_centroids = np.copy(centroids)
+        for i in range(n):
+            # determine the nearest centroid and track it with label
+            min_dist, min_index = np.inf, -1
+            for j in range(k):
+                dist = _distance(data[i],centroids[j])
+                if dist < min_dist:
+                    min_dist, min_index = dist, j
+                    label[i] = j
+            assement[i] = _distance(data[i],centroids[label[i]])**2
+        # update centroid
+        print('label', label)
+        for m in range(k):
+            if len(data[label==m]) == 0:
+                return centroids, label, np.sum(assement)
+            centroids[m] = np.mean(data[label==m],axis=0)
+        converged = _converged(old_centroids,centroids)    
+        if converged:
+            return centroids, label, np.sum(assement)
+    return centroids, label, np.sum(assement)
 
 
 '''主函数 '''
 # 设置参数
 pop = 5  # 种群数量
-dim = 28 # 维度
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
 # print('X', X)
@@ -269,7 +264,7 @@ dim = 28 # 维度
 def averFitness(func, X, K, number, maxIter):
     s = []
     for i in range(number):
-        U, C, iter, cluster = func(X, K, maxIter)
+        U, C, iter = func(X, K, maxIter)
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
@@ -283,25 +278,28 @@ Y = wine.data
 dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
 Z = dataset.values
 
-# max, min, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+dataset = pd.read_csv('./Frogs_MFCCs.csv', delimiter=",")
+XX = dataset.values
+
+maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 10, maxIter = 10)
+print('k-means最大值：', maxK)
+print('k-means最小值:', minK)
+print('k-means平均值：', aver)
+
+# max, min, aver = averFitness(Kmeans, X=XX, K=4, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
-
-max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 30, maxIter = 10)
-print('k-means最大值：', max)
-print('k-means最小值:', min)
-print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-# GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, X)
-# print('GBestScore', GbestScore)
-# print('CbestPositon', GbestPositon)
-# print('Curve', Curve)
+GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
+print('GBestScore', GbestScore)
+print('CbestPositon', GbestPositon)
+print('Curve', Curve)
 
 # GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, Y)
 # print('GBestScore', GbestScore)
