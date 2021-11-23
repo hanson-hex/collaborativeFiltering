@@ -17,9 +17,11 @@ def sphere(X):
 
 
 def kFun(D, X, K):
-    m, n = np.shape(D)
+    m, dim = np.shape(D)
     result = 0
-    U = X # 均值向量,即质心
+    U = np.zeros([K, dim])
+    for i in range(K):
+        U[i] = X[i * dim : (i +1)* dim]
     # 计算样本到各均值向量的距离
     for i in range(m):
         p = 0;
@@ -85,23 +87,24 @@ def distance(x1, x2):  # 计算距离
   
 def BOAK(pop, k, D):
     m, dim = np.shape(D)
+    print('D', D)
     lb = np.zeros(dim * k)  # 下边界
     ub =  np.zeros(dim * k)  # 上边界
-    for i in range(len(D[0])):
-        lb[i] = min([row[i] for row in D])
-        ub[i] = max([row[i] for row in D])
+    for i in range(dim * k):
+        lb[i] = min([row[i % dim] for row in D])
+        ub[i] = max([row[i % dim] for row in D])
     MaxIter = 5
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     fun=kFun
-    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    X, lb, ub = initial(pop, dim * k, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
 
     GbestScore = fitness[0]
-    GbestPositon = np.zeros([1, dim])
+    GbestPositon = np.zeros([1, dim * k])
     GbestPositon[0,:] = X[0, :]
     X_new = X
     Curve = np.zeros([MaxIter, 1])
@@ -126,7 +129,7 @@ def BOAK(pop, k, D):
                 X[i,:] = X_new[i,:]
             
         X = X_new    
-        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
+        X = BorderCheck(X, ub, lb, pop, dim * k)  # 边界检测
         fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
         X = SortPosition(X, sortIndex)  # 种群排序
