@@ -14,15 +14,15 @@ import warnings
 from DBI import compute_DB_index
 import math 
 
-from sklearn import datasets
-iris = datasets.load_iris()
-X = iris.data
-from sklearn.cluster import KMeans
-from sklearn.metrics import davies_bouldin_score
-kmeans = KMeans(n_clusters=3, random_state=1).fit(X)
-labels = kmeans.labels_
-print('1111', labels)
-print('---', dbs(X, labels))
+# from sklearn import datasets
+# iris = datasets.load_iris()
+# X = iris.data
+# from sklearn.cluster import KMeans
+# from sklearn.metrics import davies_bouldin_score
+# kmeans = KMeans(n_clusters=3, random_state=1).fit(X)
+# labels = kmeans.labels_
+# print('1111', labels)
+# print('---', dbs(X, labels))
 
 # dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
 # data = dataset.values
@@ -117,7 +117,7 @@ def kmeans(data,k, maxIter):
     dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
     return centroids, label, dbsList, curIter
 
-def kcluster(rows,k=4):  
+def kcluster(rows,k,maxIter):  
   m, n = np.shape(rows)
   # 确定每个点的最大值和最小值，给随机数定个范围  
   ranges=[(min([row[i] for row in rows]),max([row[i] for row in rows]))   
@@ -127,6 +127,8 @@ def kcluster(rows,k=4):
   # 随机建立k个中心点  
   clusters=[[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]   
   for i in range(len(rows[0]))] for j in range(k)]  
+
+  print('clusters', clusters)
 
   lastmatches=None
   # 设定循环100次，看你的数据大小，次数自定义  
@@ -243,10 +245,10 @@ def averFitness(func, X, K, number, maxIter):
 
 s = []
 number = 10
-for i in range(2, number):
-    print('i', i)
-    U, C, dbsList = kcluster(X, i)
+for i in range(number):
+    U, C, dbsList = kcluster(X, K, 100)
     print('C', C)
+    print('dbsList', dbsList)
     s.append(dbs(X, C))
 print('S', s)
 print('max(s)', max(s))

@@ -22,6 +22,7 @@ def kFun(D, X, K):
     U = np.zeros([K, dim])
     for i in range(K):
         U[i] = X[i * dim : (i +1)* dim]
+    C = np.zeros(m)
     # 计算样本到各均值向量的距离
     for i in range(m):
         p = 0;
@@ -30,8 +31,12 @@ def kFun(D, X, K):
             if distance(D[i], U[j]) < minDistance:
                 p = j
                 minDistance = distance(D[i], U[j])
-        result += minDistance
-    return result
+        C[i] = p
+        # result += minDistance
+    print('U', U)
+    print('C', C)
+    print('dbs--', dbs(D, C))
+    return dbs(D, C)
 
 
 ''' 种群初始化函数 '''
@@ -194,6 +199,61 @@ def BOAKA(pop, k, D):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
 
+def kcluster(rows,k,maxIter):  
+  m, n = np.shape(rows)
+#   # 确定每个点的最大值和最小值，给随机数定个范围  
+#   ranges=[(min([row[i] for row in rows]),max([row[i] for row in rows]))   
+#   for i in range(len(rows[0]))]  
+
+
+  m, dim = np.shape(rows)
+  GbestScore, GbestPositon, Curve = BOAK(pop, k, rows)
+  U = GbestPositon[0]
+  # 随机建立k个中心点  
+#   clusters=[[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]   
+#   for i in range(len(rows[0]))] for j in range(k)]  
+  clusters = np.zeros([k, dim])
+  for i in range(k):
+      clusters[i] = U[i *  dim: (i +1)* dim]
+
+  print('clusters', clusters)
+
+  lastmatches=None
+  # 设定循环100次，看你的数据大小，次数自定义  
+
+  dbsList = [float('inf')]
+  C = np.zeros(m)
+  for t in range(100):  
+    bestmatches=[[] for i in range(k)]  
+
+    # 在每一行中寻找距离最近的中心点  
+    for j in range(len(rows)):
+      row=rows[j]
+      bestmatch=0
+      for i in range(k):
+        d=distance(clusters[i],row)
+        if d<distance(clusters[bestmatch],row): bestmatch=i  
+      C[j] = bestmatch
+      bestmatches[bestmatch].append(j)  
+
+    # 如果结果与上一次的相同，则整个过程结束  
+    if bestmatches==lastmatches: break  
+    lastmatches=bestmatches  
+    dbsList.append(dbs(rows, C))
+    # 将中心点移到其所有成员的平均位置处  
+    for i in range(k):  
+      avgs=[0.0]*len(rows[0]) 
+      if len(bestmatches[i])>0:
+        for rowid in bestmatches[i]:  
+          for m in range(len(rows[rowid])):  
+            avgs[m]+=rows[rowid][m]
+        for j in range(len(avgs)):  
+          avgs[j]/=len(bestmatches[i])
+        clusters[i]=avgs
+  dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+  return bestmatches, C, dbsList
+
+
 def kmeans(data, k, maxIter):
     m, dim = np.shape(data)
     GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
@@ -350,10 +410,21 @@ Z = dataset.values
 dataset = pd.read_csv('./Frogs_MFCCs.csv', delimiter=",")
 XX = dataset.values
 
-maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
-print('k-means最大值：', maxK)
-print('k-means最小值:', minK)
-print('k-means平均值：', aver)
+
+GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
+U = GbestPositon[0]
+print('GbestScore', GbestPositon)
+print('GBestPositon', GbestPositon)
+
+# maxK, minK, aver = averFitness(kcluster, X=X, K=3, number = 30, maxIter = 10)
+# print('k-means最大值：', maxK)
+# print('k-means最小值:', minK)
+# print('k-means平均值：', aver)
+
+# maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+# print('k-means最大值：', maxK)
+# print('k-means最小值:', minK)
+# print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=XX, K=4, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
