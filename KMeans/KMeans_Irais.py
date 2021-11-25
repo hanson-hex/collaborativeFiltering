@@ -2,18 +2,27 @@ import numpy as np
 from numpy.testing._private.utils import assert_equal
 import pandas as pd
 import matplotlib.pyplot as plt
-# from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans
 from sklearn import preprocessing
 from sklearn.compose import ColumnTransformer
 from sklearn.datasets import load_iris, load_wine
 from sklearn.metrics import davies_bouldin_score as dbs
 import warnings
-warnings.simplefilter("error")
 # from sklearn.metrics import silhouette_score as dbs
 # from sklearn.metrics import calinski_harabaz_score as dbs
 # from sklearn.metrics import adjusted_rand_score as dbs
 from DBI import compute_DB_index
 import math 
+
+from sklearn import datasets
+iris = datasets.load_iris()
+X = iris.data
+from sklearn.cluster import KMeans
+from sklearn.metrics import davies_bouldin_score
+kmeans = KMeans(n_clusters=3, random_state=1).fit(X)
+labels = kmeans.labels_
+print('1111', labels)
+print('---', dbs(X, labels))
 
 # dataset = pd.read_csv('./watermelon_4.csv', delimiter=",")
 # data = dataset.values
@@ -49,15 +58,14 @@ K = 3
 
 # %%
 
-def kmeans(data,k, maxIter = 10):
+def kmeans(data,k, maxIter):
     def _distance(p1,p2):
         """
         Return Eclud distance between two points.
         p1 = np.array([0,0]), p2 = np.array([1,1]) => 1.414
         """
-        return np.sqrt(np.sum(np.square(np.array(p1)-np.array(p2))))
-        # tmp = np.sum((p1-p2)**2)
-        # return np.sqrt(tmp)
+        tmp = np.sum((p1-p2)**2)
+        return np.sqrt(tmp)
     def _rand_center(data,k):
         """Generate k center within the range of data set."""
         n = data.shape[1] # features
@@ -66,7 +74,6 @@ def kmeans(data,k, maxIter = 10):
             dmin, dmax = np.min(data[:,i]), np.max(data[:,i])
             centroids[:,i] = dmin + (dmax - dmin) * np.random.rand(k)
         return centroids
-    
     def _converged(centroids1, centroids2):
         
         # if centroids not changed, we say 'converged'
@@ -74,17 +81,15 @@ def kmeans(data,k, maxIter = 10):
          set2 = set([tuple(c) for c in centroids2])
          return (set1 == set2)
         
-    
+    dbsList = [float('inf')]
     n = data.shape[0] # number of entries
     centroids = _rand_center(data,k)
-    print('centroids', centroids)
     label = np.zeros(n,dtype=np.int) # track the nearest centroid
     assement = np.zeros(n) # for the assement of our model
     converged = False
-    curIter = maxIter  # 最大的迭代次数
-    dbsList = [float('inf')]
-    while curIter > 0:
-        curIter -= 1 
+    curIter = 0
+    while not converged:
+        curIter += 1
         old_centroids = np.copy(centroids)
         for i in range(n):
             # determine the nearest centroid and track it with label
@@ -95,15 +100,22 @@ def kmeans(data,k, maxIter = 10):
                     min_dist, min_index = dist, j
                     label[i] = j
             assement[i] = _distance(data[i],centroids[label[i]])**2
+        
         # update centroid
+        dbsList.append(dbs(data, label))
+        new_centroids = []
         for m in range(k):
             if len(data[label==m]) == 0:
-                return centroids, label, np.sum(assement)
-            centroids[m] = np.mean(data[label==m],axis=0)
-        converged = _converged(old_centroids,centroids)    
-        if converged:
-            return centroids, label, np.sum(assement)
-    return centroids, label, np.sum(assement)
+                k -= 1
+            else:
+             centroids[m] = np.mean(data[label==m],axis=0)
+             new_centroids.append(centroids[m])
+        if k == 2: 
+            print('new_Centroids', new_centroids)
+            centroids = new_centroids
+        converged = _converged(old_centroids,centroids)
+    dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+    return centroids, label, dbsList, curIter
 
 def kcluster(rows,k=4):  
   m, n = np.shape(rows)
@@ -116,10 +128,10 @@ def kcluster(rows,k=4):
   clusters=[[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]   
   for i in range(len(rows[0]))] for j in range(k)]  
 
-
-  lastmatches=None  
+  lastmatches=None
   # 设定循环100次，看你的数据大小，次数自定义  
 
+  dbsList = [float('inf')]
   C = np.zeros(m)
   for t in range(100):  
     bestmatches=[[] for i in range(k)]  
@@ -137,7 +149,7 @@ def kcluster(rows,k=4):
     # 如果结果与上一次的相同，则整个过程结束  
     if bestmatches==lastmatches: break  
     lastmatches=bestmatches  
-
+    dbsList.append(dbs(rows, C))
     # 将中心点移到其所有成员的平均位置处  
     for i in range(k):  
       avgs=[0.0]*len(rows[0]) 
@@ -148,8 +160,8 @@ def kcluster(rows,k=4):
         for j in range(len(avgs)):  
           avgs[j]/=len(bestmatches[i])
         clusters[i]=avgs
-  return bestmatches, C
-
+  dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+  return bestmatches, C, dbsList
 
 import random
 def distance(x1, x2):  # 计算距离
@@ -199,6 +211,8 @@ def Kmeans(D,K,maxIter):
             cnt[int(C[i])] += 1
         dbsList.append(dbs(D, C))
         changed = 0
+        print('newU', newU)
+        print('cnt', cnt)
         # 判断质心是否发生变化，如果发生变化则继续迭代，否则结束
         for i in range(K):
             newU[i] /= cnt[i]
@@ -222,16 +236,19 @@ def averFitness(func, X, K, number, maxIter):
     s = []
     for i in range(number):
         # U, C, iter, cluster, dbsLists = func(X, K, maxIter)
-        U, C, iter, cluster = func(X, K, maxIter)
+        U, C, iter = func(X, K, maxIter)
         # U, C, iter, cluster, dbsLists = func(X, K, maxIter)
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
 s = []
-number = 100
-for i in range(number):
-    U, C = kcluster(X, K)
+number = 10
+for i in range(2, number):
+    print('i', i)
+    U, C, dbsList = kcluster(X, i)
+    print('C', C)
     s.append(dbs(X, C))
+print('S', s)
 print('max(s)', max(s))
 print('min(s)', min(s))
 print('sum(s)/number', sum(s)/number)
@@ -247,11 +264,23 @@ print('sum(s)/number', sum(s)/number)
 # print('kmeans2')
 # print(dbs(X, km.labels_))
 
-# U, C, iter, cluster, dbsList = Kmeans(X, K, 100)
-# print('kmeans3')
-# print('dbsList', dbsList[len(dbsList) - 1])
-# print('iter', iter)
+# s = []
+# number = 10
+# for i in range(2, number):
+#     print('i', i)
+#     U, C, dbsList, iter = kmeans(X, 9, 100)
+#     print('C', C)
+#     s.append(dbs(X, C))
+# print('S', s)
 
+# U, C, dbsList, iter = kmeans(X, K, 100)
+# print('iter', iter)
+# print('dbs--', dbs(X, C))
+
+# max, min, aver = averFitness(kmeans, X=X, K=K, number = 30, maxIter = 100)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
 
 
 # 绘制适应度曲线
@@ -270,25 +299,13 @@ print('sum(s)/number', sum(s)/number)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-# max, min, aver = averFitness(kmeans, X=X, K=K, number = 30, maxIter = 10)
 
-# print('k-means最大值：', max)
-# print('k-means最小值:', min)
-# print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
 
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
-
-
-
-# print('iter', iter)
-# print('C', C)
-# print(compute_DB_index(cluster, U, 3))
-# print(DaviesBouldin(X, C))
-
 
 # U, C, iter, cluster = MyKmeans(Y, 13, 99)
 # print('iter', iter)
@@ -342,19 +359,6 @@ print('sum(s)/number', sum(s)/number)
 # m, n = np.shape(X)
 # for i in range(m):
 #     plt.plot([X[i, 0], U[int(C[i]), 0]], [X[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
-# plt.show()
-
-# f1 = plt.figure(1)
-# plt.title('watermelon_4')
-# plt.xlabel('density')
-# plt.ylabel('ratio')
-# plt.scatter(data[:, 0], data[:, 1], marker='o', color='g', s=50)
-# plt.scatter(U[:, 0], U[:, 1], marker='o', color='r', s=100)
-# # plt.xlim(0,1)
-# # plt.ylim(0,1)
-# m, n = np.shape(data)
-# for i in range(m):
-#     plt.plot([data[i, 0], U[int(C[i]), 0]], [data[i, 1], U[int(C[i]), 1]], "c--", linewidth=0.3)
 # plt.show()
 
 # # %%

@@ -87,7 +87,6 @@ def distance(x1, x2):  # 计算距离
   
 def BOAK(pop, k, D):
     m, dim = np.shape(D)
-    print('D', D)
     lb = np.zeros(dim * k)  # 下边界
     ub =  np.zeros(dim * k)  # 上边界
     for i in range(dim * k):
@@ -195,9 +194,72 @@ def BOAKA(pop, k, D):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
 
+def kmeans(data, k, maxIter):
+    m, dim = np.shape(data)
+    GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
+    U = GbestPositon[0]
+    def _distance(p1,p2):
+        """
+        Return Eclud distance between two points.
+        p1 = np.array([0,0]), p2 = np.array([1,1]) => 1.414
+        """
+        tmp = np.sum((p1-p2)**2)
+        return np.sqrt(tmp)
+    def _rand_center(data,k):
+        """Generate k center within the range of data set."""
+        n = data.shape[1] # features
+        centroids = np.zeros((k,n)) # init with (0,0)....
+        for i in range(n):
+            dmin, dmax = np.min(data[:,i]), np.max(data[:,i])
+            centroids[:,i] = dmin + (dmax - dmin) * np.random.rand(k)
+        return centroids
+    def _converged(centroids1, centroids2):
+        
+        # if centroids not changed, we say 'converged'
+         set1 = set([tuple(c) for c in centroids1])
+         set2 = set([tuple(c) for c in centroids2])
+         return (set1 == set2)
+        
+    dbsList = [float('inf')]
+    n = data.shape[0] # number of entries
+    print('U', U)
+    centroids = np.zeros([k, dim])
+    for i in range(k):
+        centroids[i] = U[i *  dim: (i +1)* dim]
+    print('centroids', centroids)
+    label = np.zeros(n,dtype=np.int) # track the nearest centroid
+    assement = np.zeros(n) # for the assement of our model
+    converged = False
+    while not converged:
+        old_centroids = np.copy(centroids)
+        for i in range(n):
+            # determine the nearest centroid and track it with label
+            min_dist, min_index = np.inf, -1
+            for j in range(k):
+                dist = _distance(data[i],centroids[j])
+                if dist < min_dist:
+                    min_dist, min_index = dist, j
+                    label[i] = j
+            assement[i] = _distance(data[i],centroids[label[i]])**2
+        
+        # update centroid
+        empyArray = []
+        dbsList.append(dbs(data, label))
+        new_centroids = []
+        for m in range(k):
+            if len(data[label==m]) == 0:
+                k -= 1
+            else:
+             centroids[m] = np.mean(data[label==m],axis=0)
+             new_centroids.append(centroids[m])
+        if k == 2: 
+            centroids = new_centroids
+        converged = _converged(old_centroids,centroids)    
+    dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+    return centroids, label, dbsList
 
 def Kmeans(data,k,maxIter):
-    m, n = np.shape(data)
+    m, dim = np.shape(data)
     GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
     U = GbestPositon[0]
     def _distance(p1,p2):
@@ -224,9 +286,14 @@ def Kmeans(data,k,maxIter):
          set2 = set([tuple(c) for c in centroids2])
          return (set1 == set2)
         
+    print('m, dim', m, dim)
     n = data.shape[0] # number of entries
-    print('GbestPosition', GbestPositon[0])
-    centroids = GbestPositon[0]
+    print('n', n)
+    centroids = np.zeros([k, dim])
+    print('U', U)
+    for i in range(k):
+        centroids[i] = U[i *  dim: (i +1)* dim]
+    print('centroids', centroids)
     label = np.zeros(n,dtype=np.int) # track the nearest centroid
     assement = np.zeros(n) # for the assement of our model
 
@@ -246,7 +313,6 @@ def Kmeans(data,k,maxIter):
                     label[i] = j
             assement[i] = _distance(data[i],centroids[label[i]])**2
         # update centroid
-        print('label', label)
         for m in range(k):
             if len(data[label==m]) == 0:
                 return centroids, label, np.sum(assement)
@@ -284,7 +350,7 @@ Z = dataset.values
 dataset = pd.read_csv('./Frogs_MFCCs.csv', delimiter=",")
 XX = dataset.values
 
-maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 10, maxIter = 10)
+maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
 print('k-means最大值：', maxK)
 print('k-means最小值:', minK)
 print('k-means平均值：', aver)
@@ -299,10 +365,10 @@ print('k-means平均值：', aver)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
-print('GBestScore', GbestScore)
-print('CbestPositon', GbestPositon)
-print('Curve', Curve)
+# GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
+# print('GBestScore', GbestScore)
+# print('CbestPositon', GbestPositon)
+# print('Curve', Curve)
 
 # GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, Y)
 # print('GBestScore', GbestScore)
