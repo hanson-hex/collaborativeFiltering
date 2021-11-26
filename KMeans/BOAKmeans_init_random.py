@@ -3,7 +3,7 @@ import random
 import pandas as pd
 import math
 from matplotlib import pyplot as plt
-from sklearn.metrics import davies_bouldin_score as dbs
+from sklearn.metrics import cluster, davies_bouldin_score as dbs
 from sklearn.datasets import load_iris, load_wine
 
 '''优化函数'''
@@ -13,8 +13,6 @@ from sklearn.datasets import load_iris, load_wine
 def sphere(X):
     output = sum(np.square(X)/25)
     return output
-
-
 
 def kFun(D, X, K):
     m, dim = np.shape(D)
@@ -32,11 +30,14 @@ def kFun(D, X, K):
                 p = j
                 minDistance = distance(D[i], U[j])
         C[i] = p
-        # result += minDistance
-    print('U', U)
-    print('C', C)
-    print('dbs--', dbs(D, C))
-    return dbs(D, C)
+        result += minDistance
+    return result
+    # if len(set(C)) == 1:
+    #     return float('inf')
+    # print('U', U)
+    # print('C', C)
+    # print('dbs--', dbs(D, C))
+    # return dbs(D, C)
 
 
 ''' 种群初始化函数 '''
@@ -59,6 +60,14 @@ def BorderCheck(X, ub, lb, pop, dim):
                 X[i, j] = lb[j]
     return X
 
+'''边界检查函数'''
+def BorderCheckItem(X, ub, lb, dim):
+    for j in range(dim):
+        if X[j] > ub[j]:
+            X[j] = ub[j]
+        elif X[j] < lb[j]:
+            X[j] = lb[j]
+    return X
 
 '''计算适应度函数'''
 def CaculateFitness(X, fun, D, k):
@@ -128,6 +137,7 @@ def BOAK(pop, k, D):
                 dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
                 Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
+                X_new[i,:] = BorderCheckItem(X_new[i,:], ub, lb, dim*k)
             #如果更优才更新
             if(fun(D, X_new[i,:], k)<fitness[i]):
                 X[i,:] = X_new[i,:]
@@ -205,7 +215,6 @@ def kcluster(rows,k,maxIter):
 #   ranges=[(min([row[i] for row in rows]),max([row[i] for row in rows]))   
 #   for i in range(len(rows[0]))]  
 
-
   m, dim = np.shape(rows)
   GbestScore, GbestPositon, Curve = BOAK(pop, k, rows)
   U = GbestPositon[0]
@@ -247,24 +256,27 @@ def kcluster(rows,k,maxIter):
         for rowid in bestmatches[i]:  
           for m in range(len(rows[rowid])):  
             avgs[m]+=rows[rowid][m]
-        for j in range(len(avgs)):  
+        for j in range(len(avgs)):
           avgs[j]/=len(bestmatches[i])
         clusters[i]=avgs
   dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+  print('dbsList', dbsList)
   return bestmatches, C, dbsList
 
 
-def kmeans(data, k, maxIter):
+def kmeans(data, K, maxIter):
     m, dim = np.shape(data)
-    GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
-    U = GbestPositon[0]
+    k = K
+    # GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
+    GBestPositon = [[4.3, 2, 3.10221011, 0.1,4.3, 2,1,0.1,4.3,2,1,0.1]]
+    U = GBestPositon[0]
     def _distance(p1,p2):
         """
         Return Eclud distance between two points.
         p1 = np.array([0,0]), p2 = np.array([1,1]) => 1.414
         """
-        tmp = np.sum((p1-p2)**2)
-        return np.sqrt(tmp)
+        return np.sqrt(np.sum(np.square(np.array(p1)-np.array(p2))))
+
     def _rand_center(data,k):
         """Generate k center within the range of data set."""
         n = data.shape[1] # features
@@ -303,7 +315,6 @@ def kmeans(data, k, maxIter):
             assement[i] = _distance(data[i],centroids[label[i]])**2
         
         # update centroid
-        empyArray = []
         dbsList.append(dbs(data, label))
         new_centroids = []
         for m in range(k):
@@ -312,8 +323,8 @@ def kmeans(data, k, maxIter):
             else:
              centroids[m] = np.mean(data[label==m],axis=0)
              new_centroids.append(centroids[m])
-        if k == 2: 
-            centroids = new_centroids
+        print('new_centroids', new_centroids)
+        centroids = new_centroids
         converged = _converged(old_centroids,centroids)    
     dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
     return centroids, label, dbsList
@@ -385,7 +396,7 @@ def Kmeans(data,k,maxIter):
 
 '''主函数 '''
 # 设置参数
-pop = 5  # 种群数量
+pop = 50  # 种群数量
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
 # print('X', X)
@@ -411,15 +422,19 @@ dataset = pd.read_csv('./Frogs_MFCCs.csv', delimiter=",")
 XX = dataset.values
 
 
-GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
-U = GbestPositon[0]
-print('GbestScore', GbestPositon)
-print('GBestPositon', GbestPositon)
+# centroids, label, dbsList = kcluster(X, 3, 50)
+# print('centroids', centroids)
+# print('dbsList', dbsList)
 
-# maxK, minK, aver = averFitness(kcluster, X=X, K=3, number = 30, maxIter = 10)
-# print('k-means最大值：', maxK)
-# print('k-means最小值:', minK)
-# print('k-means平均值：', aver)
+# GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
+# U = GbestPositon[0]
+# print('GbestScore', GbestScore)
+# print('GBestPositon', GbestPositon)
+
+maxK, minK, aver = averFitness(kcluster, X=X, K=3, number = 30, maxIter = 10)
+print('k-means最大值：', maxK)
+print('k-means最小值:', minK)
+print('k-means平均值：', aver)
 
 # maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
 # print('k-means最大值：', maxK)
