@@ -32,12 +32,12 @@ import math
 
 iris = load_iris()
 X = iris.data
-print('X', X)
+# print('X', X)
 K = 3
 
-# wine = load_wine()
-# X = wine.data
-# print("Y", Y)
+wine = load_wine()
+Y = wine.data
+print("Y", Y)
 
 # dataset = pd.read_csv('./Absenteeism_at_work.csv', delimiter=";")
 # X = dataset.values
@@ -110,12 +110,11 @@ def kmeans(data,k, maxIter):
             else:
              centroids[m] = np.mean(data[label==m],axis=0)
              new_centroids.append(centroids[m])
-        if k == 2: 
-            print('new_Centroids', new_centroids)
-            centroids = new_centroids
+        centroids = new_centroids
         converged = _converged(old_centroids,centroids)
     dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
-    return centroids, label, dbsList, curIter
+    print('dbsList', dbsList)
+    return centroids, label, dbsList
 
 def kcluster(rows,k,maxIter):  
   m, n = np.shape(rows)
@@ -124,7 +123,7 @@ def kcluster(rows,k,maxIter):
   for i in range(len(rows[0]))]  
 
 
-  # 随机建立k个中心点  
+  # 随机建立k个中心点 
   clusters=[[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]   
   for i in range(len(rows[0]))] for j in range(k)]  
 
@@ -243,17 +242,17 @@ def averFitness(func, X, K, number, maxIter):
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
-s = []
-number = 10
-for i in range(number):
-    U, C, dbsList = kcluster(X, K, 100)
-    print('C', C)
-    print('dbsList', dbsList)
-    s.append(dbs(X, C))
-print('S', s)
-print('max(s)', max(s))
-print('min(s)', min(s))
-print('sum(s)/number', sum(s)/number)
+# s = []
+# number = 10
+# for i in range(number):
+#     U, C, dbsList = kcluster(Y, K, 100)
+#     print('C', C)
+#     print('dbsList', dbsList)
+#     s.append(dbs(Y, C))
+# print('S', s)
+# print('max(s)', max(s))
+# print('min(s)', min(s))
+# print('sum(s)/number', sum(s)/number)
 
 
 # print('kmeans1')
@@ -279,10 +278,10 @@ print('sum(s)/number', sum(s)/number)
 # print('iter', iter)
 # print('dbs--', dbs(X, C))
 
-# max, min, aver = averFitness(kmeans, X=X, K=K, number = 30, maxIter = 100)
-# print('k-means最大值：', max)
-# print('k-means最小值:', min)
-# print('k-means平均值：', aver)
+max, min, aver = averFitness(kmeans, X=Y, K=K, number = 3, maxIter = 100)
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
 
 
 # 绘制适应度曲线

@@ -30,14 +30,11 @@ def kFun(D, X, K):
                 p = j
                 minDistance = distance(D[i], U[j])
         C[i] = p
-        result += minDistance
-    return result
-    # if len(set(C)) == 1:
-    #     return float('inf')
-    # print('U', U)
-    # print('C', C)
-    # print('dbs--', dbs(D, C))
-    # return dbs(D, C)
+    #     result += minDistance
+    # return result
+    if len(set(C)) == 1:
+        return float('inf')
+    return dbs(D, C)
 
 
 ''' 种群初始化函数 '''
@@ -243,11 +240,11 @@ def kcluster(rows,k,maxIter):
         d=distance(clusters[i],row)
         if d<distance(clusters[bestmatch],row): bestmatch=i  
       C[j] = bestmatch
-      bestmatches[bestmatch].append(j)  
+      bestmatches[bestmatch].append(j)
 
     # 如果结果与上一次的相同，则整个过程结束  
     if bestmatches==lastmatches: break  
-    lastmatches=bestmatches  
+    lastmatches=bestmatches
     dbsList.append(dbs(rows, C))
     # 将中心点移到其所有成员的平均位置处  
     for i in range(k):  
@@ -267,9 +264,9 @@ def kcluster(rows,k,maxIter):
 def kmeans(data, K, maxIter):
     m, dim = np.shape(data)
     k = K
-    # GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
-    GBestPositon = [[4.3, 2, 3.10221011, 0.1,4.3, 2,1,0.1,4.3,2,1,0.1]]
-    U = GBestPositon[0]
+    GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
+    # GbestPositon = [[4.3, 2, 3.10221011, 0.1,4.3, 2,1,0.1,4.3,2,1,0.1]]
+    U = GbestPositon[0]
     def _distance(p1,p2):
         """
         Return Eclud distance between two points.
@@ -294,44 +291,65 @@ def kmeans(data, K, maxIter):
         
     dbsList = [float('inf')]
     n = data.shape[0] # number of entries
-    print('U', U)
     centroids = np.zeros([k, dim])
     for i in range(k):
         centroids[i] = U[i *  dim: (i +1)* dim]
-    print('centroids', centroids)
     label = np.zeros(n,dtype=np.int) # track the nearest centroid
     assement = np.zeros(n) # for the assement of our model
     converged = False
-    while not converged:
-        old_centroids = np.copy(centroids)
-        for i in range(n):
-            # determine the nearest centroid and track it with label
-            min_dist, min_index = np.inf, -1
-            for j in range(k):
-                dist = _distance(data[i],centroids[j])
-                if dist < min_dist:
-                    min_dist, min_index = dist, j
-                    label[i] = j
-            assement[i] = _distance(data[i],centroids[label[i]])**2
+    old_centroids = np.copy(centroids)
+    for i in range(n):
+        # determine the nearest centroid and track it with label
+        min_dist, min_index = np.inf, -1
+        for j in range(k):
+            dist = _distance(data[i],centroids[j])
+            if dist < min_dist:
+                min_dist, min_index = dist, j
+                label[i] = j
+        assement[i] = _distance(data[i],centroids[label[i]])**2
+    
+    # update centroid
+    dbsList.append(dbs(data, label))
+    new_centroids = []
+    for m in range(k):
+        if len(data[label==m]) == 0:
+            k -= 1
+        else:
+            centroids[m] = np.mean(data[label==m],axis=0)
+            new_centroids.append(centroids[m])
+    centroids = new_centroids
+    converged = _converged(old_centroids,centroids)  
+    # while not converged:
+    #     old_centroids = np.copy(centroids)
+    #     for i in range(n):
+    #         # determine the nearest centroid and track it with label
+    #         min_dist, min_index = np.inf, -1
+    #         for j in range(k):
+    #             dist = _distance(data[i],centroids[j])
+    #             if dist < min_dist:
+    #                 min_dist, min_index = dist, j
+    #                 label[i] = j
+    #         assement[i] = _distance(data[i],centroids[label[i]])**2
         
-        # update centroid
-        dbsList.append(dbs(data, label))
-        new_centroids = []
-        for m in range(k):
-            if len(data[label==m]) == 0:
-                k -= 1
-            else:
-             centroids[m] = np.mean(data[label==m],axis=0)
-             new_centroids.append(centroids[m])
-        print('new_centroids', new_centroids)
-        centroids = new_centroids
-        converged = _converged(old_centroids,centroids)    
-    dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+    #     # update centroid
+    #     dbsList.append(dbs(data, label))
+    #     new_centroids = []
+    #     for m in range(k):
+    #         if len(data[label==m]) == 0:
+    #             k -= 1
+    #         else:
+    #          centroids[m] = np.mean(data[label==m],axis=0)
+    #          new_centroids.append(centroids[m])
+    #     centroids = new_centroids
+    #     converged = _converged(old_centroids,centroids)    
+    # dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+    print('dbsList', dbsList)
     return centroids, label, dbsList
 
 def Kmeans(data,k,maxIter):
     m, dim = np.shape(data)
     GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
+    print('GBestScore', GbestScore[0])
     U = GbestPositon[0]
     def _distance(p1,p2):
         """
@@ -396,7 +414,7 @@ def Kmeans(data,k,maxIter):
 
 '''主函数 '''
 # 设置参数
-pop = 50  # 种群数量
+pop = 5  # 种群数量
 
 # X, ub, lb = initialBOA(pop, dim, ub, lb)
 # print('X', X)
@@ -426,20 +444,20 @@ XX = dataset.values
 # print('centroids', centroids)
 # print('dbsList', dbsList)
 
-# GbestScore, GbestPositon, Curve = BOAK(pop, 3, X)
+# GbestScore, GbestPositon, Curve = BOAK(pop, 3, Y)
 # U = GbestPositon[0]
 # print('GbestScore', GbestScore)
 # print('GBestPositon', GbestPositon)
 
-maxK, minK, aver = averFitness(kcluster, X=X, K=3, number = 30, maxIter = 10)
-print('k-means最大值：', maxK)
-print('k-means最小值:', minK)
-print('k-means平均值：', aver)
-
-# maxK, minK, aver = averFitness(Kmeans, X=X, K=3, number = 30, maxIter = 10)
+# maxK, minK, aver = averFitness(kcluster, X=X, K=3, number = 30, maxIter = 10)
 # print('k-means最大值：', maxK)
 # print('k-means最小值:', minK)
 # print('k-means平均值：', aver)
+
+maxK, minK, aver = averFitness(kmeans, X=Y, K=3, number = 10, maxIter = 10)
+print('k-means最大值：', maxK)
+print('k-means最小值:', minK)
+print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=XX, K=4, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
@@ -462,8 +480,6 @@ print('k-means平均值：', aver)
 # print('Curve', Curve)
 
 # GbestScore, GbestPositon, Curve = BOAK(pop, 28,5, Z)
-
-
 # print('GBestScore', GbestScore)
 # print('CbestPositon', GbestPositon)
 # print('Curve', Curve)

@@ -17,10 +17,11 @@ def sphere(X):
 
 
 def kFun(D, X, K):
-    m, n = np.shape(D)
+    m, dim = np.shape(D)
     result = 0
-    X = [int(i) for i in X]
-    U = D[X, :]  # 均值向量,即质心
+    U = np.zeros([K, dim])
+    for i in range(K):
+        U[i] = X[i * dim : (i +1)* dim]
     C = np.zeros(m)
     # 计算样本到各均值向量的距离
     for i in range(m):
@@ -30,8 +31,12 @@ def kFun(D, X, K):
             if distance(D[i], U[j]) < minDistance:
                 p = j
                 minDistance = distance(D[i], U[j])
-        result += minDistance
-    return result
+        C[i] = p
+    #     result += minDistance
+    # return result
+    if len(set(C)) == 1:
+        return float('inf')
+    return dbs(D, C)
 
 
 ''' 种群初始化函数 '''
@@ -40,7 +45,7 @@ def initial(pop, dim, ub, lb):
     X = np.zeros([pop, dim])
     for i in range(pop):
         for j in range(dim):
-            X[i, j] = int(random.randint(lb[j], ub[j] ))
+            X[i, j] = random.random() * (ub[j] - lb[j]) + lb[j]
     return X, lb, ub
 
 
@@ -48,7 +53,6 @@ def initial(pop, dim, ub, lb):
 def BorderCheck(X, ub, lb, pop, dim):
     for i in range(pop):
         for j in range(dim):
-            X[i, j] = int(float(X[i, j]))
             if X[i, j] > ub[j]:
                 X[i, j] = ub[j]
             elif X[i, j] < lb[j]:
@@ -56,7 +60,6 @@ def BorderCheck(X, ub, lb, pop, dim):
     return X
 
 def BorderCheckItem(X, ub, lb, dim):
-    X = X.astype(int)
     for j in range(dim):
         if X[j] > ub[j]:
             X[j] = ub[j]
@@ -106,20 +109,25 @@ def initialBOA(pop, k, ub, lb):
     return X, lb, ub
 
 def BOAK(pop, k,D):
-    lb = 0 * np.ones([k, 1])  # 下边界
-    ub =  (len(D) - 1)* np.ones([k, 1])  # 上边界
+    m, dim = np.shape(D)
+    lb = np.zeros(dim * k)  # 下边界
+    ub =  np.zeros(dim * k)  # 上边界
+    for i in range(dim * k):
+        lb[i] = min([row[i % dim] for row in D])
+        ub[i] = max([row[i % dim] for row in D])
     MaxIter = 5
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     
     fun=kFun
-    X, lb, ub = initialBOA(pop, k, ub, lb)  # 初始化种群
+    X, lb, ub = initial(pop, dim*k, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
+
     GbestScore = fitness[0]
-    GbestPositon = np.zeros([1, k])
+    GbestPositon = np.zeros([1, dim*k])
     GbestPositon[0,:] = X[0, :]
     X_new = X
     Curve = np.zeros([MaxIter, 1])
@@ -140,14 +148,14 @@ def BOAK(pop, k,D):
                 dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
                 Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
-            X_new[i, :] = BorderCheckItem(X_new[i, :], ub, lb, k)
+            X_new[i, :] = BorderCheckItem(X_new[i, :], ub, lb, dim*k)
             #如果更优才更新
             if(fun(D, X_new[i,:], k)<fitness[i]):
                 X[i,:] = X_new[i,:]
             
             
         X = X_new
-        X = BorderCheck(X, ub, lb, pop, k)  # 边界检测
+        X = BorderCheck(X, ub, lb, pop, dim*k)  # 边界检测
         fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
         X = SortPosition(X, sortIndex)  # 种群排序
@@ -155,7 +163,7 @@ def BOAK(pop, k,D):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
 
-        mutant = getMutate(pop, k, X, ub, lb)
+        mutant = getMutate(pop, dim*k, X, ub, lb)
         X = csAndSelect(pop,k, X, mutant, fun, fitness, D)
 
         fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
@@ -166,7 +174,7 @@ def BOAK(pop, k,D):
             GbestPositon[0,:] = X[0, :]
         
 
-        V = GbestPositon[0, :] + 0.001*np.random.randn(1, k)
+        V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim*k)
         X[pop - 1,:] = V[0,:]
 
         fitness = CaculateFitness(X, fun, D, k)  # 计算适应度值
@@ -212,50 +220,90 @@ def csAndSelect(pop, dim, X, mutate, fun, fitness, D):
                 X_new[i,:] = mutate[i,:]
    return X_new
 
-def Kmeans(D,K,maxIter):
-    m, n = np.shape(D)
-    if K >= m:
-        return D
-    GbestScore, GbestPositon, Curve = BOAK(pop, K, D)
-    GbestPositon  = GbestPositon.astype(int)
-    initSet = GbestPositon[0]
-    U = D[list(initSet), :]  # 均值向量,即质心
-    C = np.zeros(m)
-    curIter = maxIter  # 最大的迭代次数
-    while curIter > 0:
-        curIter -= 1
-        # 计算样本到各均值向量的距离
-        for i in range(m):
-            p = 0
-            minDistance = distance(D[i], U[0])
-            for j in range(1, K):
-                if distance(D[i], U[j]) < minDistance:
-                    p = j
-                    minDistance = distance(D[i], U[j])
-            C[i] = p
-        newU = np.zeros((K, n))
-        cnt = np.zeros(K)
+def kmeans(data, K, maxIter):
+    m, dim = np.shape(data)
+    k = K
+    GbestScore, GbestPositon, Curve = BOAK(pop, k, data)
+    print('GBestScore', GbestScore)
+    U = GbestPositon[0]
+    def _distance(p1,p2):
+        """
+        Return Eclud distance between two points.
+        p1 = np.array([0,0]), p2 = np.array([1,1]) => 1.414
+        """
+        return np.sqrt(np.sum(np.square(np.array(p1)-np.array(p2))))
 
-        for i in range(m):
-            newU[int(C[i])] += D[i]
-            cnt[int(C[i])] += 1
-
-        changed = 0
-        # 判断质心是否发生变化，如果发生变化则继续迭代，否则结束
-        for i in range(K):
-            newU[i] /= cnt[i]
-            for j in range(n):
-                if U[i, j] != newU[i, j]:
-                    changed = 1
-                    U[i, j] = newU[i, j]
-        if changed == 0:
-            cluster = [[D[i] for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-            return U, C, maxIter-curIter, cluster
-    cluster = [[D[i]  for i, j in enumerate(C) if (j == k)] for k in range(K)]
-    # indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(K)]
-
-    return U, C, maxIter-curIter, cluster
+    def _rand_center(data,k):
+        """Generate k center within the range of data set."""
+        n = data.shape[1] # features
+        centroids = np.zeros((k,n)) # init with (0,0)....
+        for i in range(n):
+            dmin, dmax = np.min(data[:,i]), np.max(data[:,i])
+            centroids[:,i] = dmin + (dmax - dmin) * np.random.rand(k)
+        return centroids
+    def _converged(centroids1, centroids2):
+        
+        # if centroids not changed, we say 'converged'
+         set1 = set([tuple(c) for c in centroids1])
+         set2 = set([tuple(c) for c in centroids2])
+         return (set1 == set2)
+        
+    dbsList = [float('inf')]
+    n = data.shape[0] # number of entries
+    centroids = np.zeros([k, dim])
+    for i in range(k):
+        centroids[i] = U[i *  dim: (i +1)* dim]
+    label = np.zeros(n,dtype=np.int) # track the nearest centroid
+    assement = np.zeros(n) # for the assement of our model
+    converged = False
+    old_centroids = np.copy(centroids)
+    for i in range(n):
+        # determine the nearest centroid and track it with label
+        min_dist, min_index = np.inf, -1
+        for j in range(k):
+            dist = _distance(data[i],centroids[j])
+            if dist < min_dist:
+                min_dist, min_index = dist, j
+                label[i] = j
+        assement[i] = _distance(data[i],centroids[label[i]])**2
+    
+    # update centroid
+    dbsList.append(dbs(data, label))
+    new_centroids = []
+    for m in range(k):
+        if len(data[label==m]) == 0:
+            k -= 1
+        else:
+            centroids[m] = np.mean(data[label==m],axis=0)
+            new_centroids.append(centroids[m])
+    centroids = new_centroids
+    converged = _converged(old_centroids,centroids)  
+    # while not converged:
+    #     old_centroids = np.copy(centroids)
+    #     for i in range(n):
+    #         # determine the nearest centroid and track it with label
+    #         min_dist, min_index = np.inf, -1
+    #         for j in range(k):
+    #             dist = _distance(data[i],centroids[j])
+    #             if dist < min_dist:
+    #                 min_dist, min_index = dist, j
+    #                 label[i] = j
+    #         assement[i] = _distance(data[i],centroids[label[i]])**2
+        
+    #     # update centroid
+    #     dbsList.append(dbs(data, label))
+    #     new_centroids = []
+    #     for m in range(k):
+    #         if len(data[label==m]) == 0:
+    #             k -= 1
+    #         else:
+    #          centroids[m] = np.mean(data[label==m],axis=0)
+    #          new_centroids.append(centroids[m])
+    #     centroids = new_centroids
+    #     converged = _converged(old_centroids,centroids)    
+    # dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
+    print('dbsList', dbsList)
+    return centroids, label, dbsList
 
 
    
@@ -263,16 +311,12 @@ def Kmeans(D,K,maxIter):
 
 '''主函数 '''
 # 设置参数
-pop = 10  # 种群数量
-MaxIter = 5 # 最大迭代次数
-dim = 28 # 维度
-
-# X, ub, lb = initialBOA(pop, dim, ub, lb)
+pop = 5  # 种群数量
 
 def averFitness(func, X, K, number, maxIter):
     s = []
     for i in range(number):
-        U, C, iter, cluster = func(X, K, maxIter)
+        U, C, iter = func(X, K, maxIter)
         s.append(dbs(X, C))
     return max(s), min(s), sum(s) / number
 
@@ -290,19 +334,19 @@ Z = dataset.values
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-# max, min, aver = averFitness(Kmeans, X=Y, K=3, number = 30, maxIter = 10)
-# print('k-means最大值：', max)
-# print('k-means最小值:', min)
-# print('k-means平均值：', aver)
-
-max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
+max, min, aver = averFitness(kmeans, X=Y, K=3, number = 30, maxIter = 10)
 print('k-means最大值：', max)
 print('k-means最小值:', min)
 print('k-means平均值：', aver)
 
+# max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
 
 
-# GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, Y)
+
+# GbestScore, GbestPositon, Curve = BOAK(pop, 3, Y)
 # print('GBestScore', GbestScore)
 # print('CbestPositon', GbestPositon)
 # print('Curve', Curve)
