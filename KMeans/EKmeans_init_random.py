@@ -207,15 +207,16 @@ def getMutate(pop, dim, X, ub, lb):
     return mutant
 
 
-def csAndSelect(pop, dim, X, mutate, fun, fitness, D):
+def csAndSelect(pop, k, X, mutate, fun, fitness, D):
    CR = 0.1
    X_new = X
+   m, dim = np.shape(X)
    for i in range(pop):
         Jrand = random.randint(0, dim)
         for j in range(dim):
             if random.random() > CR and j != Jrand:
                 mutate[i, j] = X[i, j]
-            tmp = fun(D, mutate[i,:], dim)
+            tmp = fun(D, mutate[i,:], k)
             if tmp < fitness[i]:
                 X_new[i,:] = mutate[i,:]
    return X_new
@@ -334,7 +335,7 @@ Z = dataset.values
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-max, min, aver = averFitness(kmeans, X=Y, K=3, number = 30, maxIter = 10)
+max, min, aver = averFitness(kmeans, X=Z, K=28, number = 30, maxIter = 10)
 print('k-means最大值：', max)
 print('k-means最小值:', min)
 print('k-means平均值：', aver)
@@ -343,8 +344,6 @@ print('k-means平均值：', aver)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
-
-
 
 # GbestScore, GbestPositon, Curve = BOAK(pop, 3, Y)
 # print('GBestScore', GbestScore)

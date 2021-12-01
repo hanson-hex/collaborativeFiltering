@@ -454,7 +454,7 @@ XX = dataset.values
 # print('k-means最小值:', minK)
 # print('k-means平均值：', aver)
 
-maxK, minK, aver = averFitness(kmeans, X=Y, K=3, number = 10, maxIter = 10)
+maxK, minK, aver = averFitness(kmeans, X=Z, K=28, number = 30, maxIter = 10)
 print('k-means最大值：', maxK)
 print('k-means最小值:', minK)
 print('k-means平均值：', aver)
