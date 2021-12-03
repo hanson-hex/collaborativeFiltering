@@ -5,6 +5,8 @@ import math
 from matplotlib import pyplot as plt
 from sklearn.metrics import cluster, davies_bouldin_score as dbs
 from sklearn.datasets import load_iris, load_wine
+from sklearn import preprocessing
+
 
 '''优化函数'''
 
@@ -438,6 +440,10 @@ Z = dataset.values
 
 dataset = pd.read_csv('./Frogs_MFCCs.csv', delimiter=",")
 XX = dataset.values
+encoder = preprocessing.LabelEncoder()
+XX[:, 22] = encoder.fit_transform(XX[:, 22])
+XX[:, 23] = encoder.fit_transform(XX[:, 23])
+XX[:, 24] = encoder.fit_transform(XX[:, 24])
 
 
 # centroids, label, dbsList = kcluster(X, 3, 50)
@@ -454,15 +460,15 @@ XX = dataset.values
 # print('k-means最小值:', minK)
 # print('k-means平均值：', aver)
 
-maxK, minK, aver = averFitness(kmeans, X=Z, K=28, number = 30, maxIter = 10)
-print('k-means最大值：', maxK)
-print('k-means最小值:', minK)
-print('k-means平均值：', aver)
-
-# max, min, aver = averFitness(Kmeans, X=XX, K=4, number = 30, maxIter = 10)
-# print('k-means最大值：', max)
-# print('k-means最小值:', min)
+# maxK, minK, aver = averFitness(kmeans, X=Z, K=28, number = 30, maxIter = 10)
+# print('k-means最大值：', maxK)
+# print('k-means最小值:', minK)
 # print('k-means平均值：', aver)
+
+max, min, aver = averFitness(Kmeans, X=XX, K=4, number = 30, maxIter = 10)
+print('k-means最大值：', max)
+print('k-means最小值:', min)
+print('k-means平均值：', aver)
 
 # max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
@@ -474,7 +480,7 @@ print('k-means平均值：', aver)
 # print('CbestPositon', GbestPositon)
 # print('Curve', Curve)
 
-# GbestScore, GbestPositon, Curve = BOAK(pop, 3, MaxIter, Y)
+# GbestScore, GbestPositon, Curve = BOAK(pop, 4, XX)
 # print('GBestScore', GbestScore)
 # print('CbestPositon', GbestPositon)
 # print('Curve', Curve)
