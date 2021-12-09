@@ -197,9 +197,8 @@ def BOA1(pop, dim, lb, ub, MaxIter, fun):
 
     return GbestScore, GbestPositon, Curve
 
-
 ## 指数收敛因子+ 差分精华算法
-def BOA2(pop, dim, lb, ub, MaxIter, fun):
+def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
@@ -325,7 +324,7 @@ def BOA3(pop, dim, lb, ub, MaxIter, fun):
     return GbestScore, GbestPositon, Curve
 
 ## 指数收敛因子
-def BOA35(pop, dim, lb, ub, MaxIter, fun):
+def EBOA(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
@@ -377,10 +376,9 @@ def BOA35(pop, dim, lb, ub, MaxIter, fun):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
 
     return GbestScore, GbestPositon, Curve
-
   
 ## 线性收敛因子
-def BOA4(pop, dim, lb, ub, MaxIter, fun):
+def LBOA(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
@@ -553,8 +551,8 @@ def averFitness(BOA, function, number):
 # print('指数sphere最优适应度值：', averFitness(BOA35, sphere, 30))
 # print('指数apline平均最优适应度值：', averFitness(BOA35, alpine, 30))
 
-print('指数sphere最优适应度值：', averFitness(BOA2, sphere, 30))
-print('指数apline平均最优适应度值：', averFitness(BOA2, alpine, 30))
+# print('指数sphere最优适应度值：', averFitness(EDEIBOA, sphere, 30))
+# print('指数apline平均最优适应度值：', averFitness(EDEIBOA, alpine, 30))
 
 # GbestScore1, GbestPositon1, Curve1 = BOA1(pop, dim, lb, ub, MaxIter, fun)
 # print('1最优适应度值：', GbestScore1)
@@ -564,7 +562,7 @@ GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, sphere)
 print('最优适应度值：', GbestScore)
 print('最优解：', GbestPositon)
 
-GbestScore2, GbestPositon2, Curve2 = BOA2(pop, dim, lb, ub, MaxIter, sphere)
+GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
 print('2最优适应度值：', GbestScore2)
 print('2最优解：', GbestPositon2)
 
