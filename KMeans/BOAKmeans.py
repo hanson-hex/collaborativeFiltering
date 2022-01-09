@@ -257,10 +257,10 @@ def averFitness(BOA, function, number):
         s += GbestScore
     return s / number
 
-iris = load_iris()
-X = iris.data
+# iris = load_iris()
+# X = iris.data
 
-GbestScore, GbestPositon, Curve = BOAK(pop, dim, lb, ub, MaxIter, X)
-print('GBestScore', GbestScore)
-print('CbestPositon', GbestPositon)
-print('Curve', Curve)
+# GbestScore, GbestPositon, Curve = BOAK(pop, dim, lb, ub, MaxIter, X)
+# print('GBestScore', GbestScore)
+# print('CbestPositon', GbestPositon)
+# print('Curve', Curve)

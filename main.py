@@ -325,33 +325,34 @@ def testKOnKMeans():
 
 
 if __name__ == '__main__':
-#   path = os.path.join('data', 'ratingsData.dat')
-#   ucf = UserBasedCF(path)
-#   ucf.calKOfKMeans()
-#   W = ucf.UserSimilarity()
-#   ucf.getAllUserPredition(10)
-#   record = ucf.getRecord()
-    testKOnKMeans()
+  start = datetime.datetime.now()
+  path = os.path.join('data', 'ratings.dat')
+  ucf = UserBasedCF(path)
+  W = ucf.UserSimilarity()
+  ucf.getAllUserPredition(10)
+  record = ucf.getRecord()
+  # testKOnKMeans()
 
+  #   ucf.calKOfKMeans()
   
-#   ucf.kMeans(10, 100)
-#   ucf.kMeans(10, 100)
-#   ucf.getKmeansPredition(10)
-#   record = ucf.getRecord()
+  #   ucf.kMeans(10, 100)
+  #   ucf.kMeans(10, 100)
+  #   ucf.getKmeansPredition(10)
+  #   record = ucf.getRecord()
 
-#   start = datetime.datetime.now()
-#   records = {
-#       "record": ucf.records
-#   }
+    # testKOnKMeans()
+  records = {
+      "record": ucf.records
+  }
 
-#   with open("./record.json","w") as f:
-#       json.dump(records,f, indent=4)
-#       print("加载入文件完成...")
+  with open("./record.json","w") as f:
+      json.dump(records,f, indent=4)
+      print("加载入文件完成...")
 
-# #   with open("./record.json",'r') as load_f:
-# #      records = json.load(load_f)
+  #   with open("./record.json",'r') as load_f:
+  #      records = json.load(load_f)
 
-# e = Evalution(records["record"])
-# print(e.MAE())
-# end = datetime.datetime.now()
-#   print("const time:" + (end -start).seconds + "s")
+  e = Evalution(records["record"])
+  print(e.MAE())
+  end = datetime.datetime.now()
+  print("const time:" + (end -start).seconds + "s")
