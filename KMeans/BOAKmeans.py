@@ -7,7 +7,6 @@ from sklearn.datasets import load_iris, load_wine
 
 '''优化函数'''
 
-
 # y = x^2, 用户可以自己定义其他函数
 def sphere(X):
     output = sum(np.square(X)/25)
@@ -18,7 +17,6 @@ def testKFun(X):
     for i in range(len(X)):
         K += math.pow(2, i) * X[len(X) - 1 - i]
     K = int(K)
-
 
 def kFun(D, X):
     m, n = np.shape(D)
@@ -222,7 +220,6 @@ def getMutate(pop, dim, X, ub, lb):
             if mutant[i, t] >= ub[t] or mutant[i, t] <= lb[t]:
                 mutant[i, t] = random.uniform(lb[t], ub[t])
     return mutant
-
 
 def csAndSelect(pop, dim, X, mutate, fun, fitness):
    CR = 0.1

@@ -15,11 +15,12 @@ from KMeans.KMeans import *
 
 
 class UserBasedCF:
-    def __init__(self, path):
+    def __init__(self, path, splitToken):
         self.train = {} #用户-物品的评分表 训练集
         self.test = {} #用户-物品的评分表 测试集
         self.pred = {} # // 预测评分
         self.records = []
+        self.splitToken = splitToken
         self.pf = None
         self.generate_dataset(path)
 
@@ -38,7 +39,7 @@ class UserBasedCF:
         # 读取文件，并生成用户-物品的评分表和测试集
         i = 0
         for line in self.loadfile(path):
-            user, movie, rating, _ = line.split('::')
+            user, movie, rating, _ = line.split(self.splitToken)
             if i <= 10:
                 print('{},{},{},{}'.format(user, movie, rating, _))
             i += 1  
@@ -117,7 +118,7 @@ class UserBasedCF:
                 if i not in self.item_users:
                     self.item_users[i] = set()
                 self.item_users[i].add(user)
-        #计算用户-用户共现矩阵
+        # 计算用户-用户共现矩阵
         C = dict()  #用户-用户共现矩阵
         N = dict()  #用户产生行为的物品个数
         for i,users in self.item_users.items():
@@ -183,7 +184,6 @@ class UserBasedCF:
                     self.KmeansW[u1][u2] = aa(item, jItem)
                     self.KmeansW.setdefault(u2, {})
                     self.KmeansW[u2][u1] = self.KmeansW[u1][u2]
-        
 
     def getKmeansPredition(self, K):
         self.pred = {}
@@ -207,8 +207,6 @@ class UserBasedCF:
 
             for i, rating in self.pred[u].items():
                 if sumUserSim == 0:
-                    print('u', u)
-                    print('i', i)
                     result = 0.0
                 else:
                     result = (self.pred[u][i]*1.0) / sumUserSim
@@ -239,7 +237,6 @@ class UserBasedCF:
 
     def kMeans(self, K, itter):
         data = self.df.values
-
         U, C, itter, cluster, indexCluster = Kmeans(data, K, itter)
         for i, clusterItem in enumerate(cluster):
             print('index: {}, ClusterItem: {}'.format(i, indexCluster[i]))
@@ -326,19 +323,22 @@ def testKOnKMeans():
 
 if __name__ == '__main__':
   start = datetime.datetime.now()
-  path = os.path.join('data', 'ratings.dat')
-  ucf = UserBasedCF(path)
-  W = ucf.UserSimilarity()
-  ucf.getAllUserPredition(10)
-  record = ucf.getRecord()
-  # testKOnKMeans()
+  print('start', start)
+#   path = os.path.join('data', 'ratings.dat')
+  path = os.path.join('ml-100k', 'u.data')
 
+#   ucf = UserBasedCF(path, "\t")
+#   W = ucf.UserSimilarity()
+#   ucf.getAllUserPredition(30)
+#   record = ucf.getRecord()
+
+  # testKOnKMeans()
   #   ucf.calKOfKMeans()
-  
-  #   ucf.kMeans(10, 100)
-  #   ucf.kMeans(10, 100)
-  #   ucf.getKmeansPredition(10)
-  #   record = ucf.getRecord()
+  #  ucf.kMeans(10, 100)
+  ucf = UserBasedCF(path, "\t")
+  ucf.kMeans(9, 100)
+  ucf.getKmeansPredition(30)
+  record = ucf.getRecord()
 
     # testKOnKMeans()
   records = {
@@ -350,9 +350,9 @@ if __name__ == '__main__':
       print("加载入文件完成...")
 
   #   with open("./record.json",'r') as load_f:
-  #      records = json.load(load_f)
+  #   records = json.load(load_f)
 
   e = Evalution(records["record"])
   print(e.MAE())
+  print(e.RMSE())
   end = datetime.datetime.now()
-  print("const time:" + (end -start).seconds + "s")

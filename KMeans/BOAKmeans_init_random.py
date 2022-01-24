@@ -208,7 +208,7 @@ def BOAKA(pop, k, D):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
 
-def kcluster(rows,k,maxIter):  
+def kcluster(rows,k):  
   m, n = np.shape(rows)
 #   # 确定每个点的最大值和最小值，给随机数定个范围  
 #   ranges=[(min([row[i] for row in rows]),max([row[i] for row in rows]))   
@@ -224,7 +224,6 @@ def kcluster(rows,k,maxIter):
   for i in range(k):
       clusters[i] = U[i *  dim: (i +1)* dim]
 
-  print('clusters', clusters)
 
   lastmatches=None
   # 设定循环100次，看你的数据大小，次数自定义  
@@ -252,14 +251,14 @@ def kcluster(rows,k,maxIter):
     for i in range(k):  
       avgs=[0.0]*len(rows[0]) 
       if len(bestmatches[i])>0:
-        for rowid in bestmatches[i]:  
+        for rowid in bestmatches[i]:
           for m in range(len(rows[rowid])):  
             avgs[m]+=rows[rowid][m]
         for j in range(len(avgs)):
           avgs[j]/=len(bestmatches[i])
         clusters[i]=avgs
+    indexCluster = [[i + 1 for i, j in enumerate(C) if (j == k)] for k in range(k)]
   dbsList = dbsList + [dbsList[len(dbsList) - 1] for i in range(100 - len(dbsList))]
-  print('dbsList', dbsList)
   return bestmatches, C, dbsList
 
 
@@ -377,14 +376,10 @@ def Kmeans(data,k,maxIter):
          set2 = set([tuple(c) for c in centroids2])
          return (set1 == set2)
         
-    print('m, dim', m, dim)
     n = data.shape[0] # number of entries
-    print('n', n)
     centroids = np.zeros([k, dim])
-    print('U', U)
     for i in range(k):
         centroids[i] = U[i *  dim: (i +1)* dim]
-    print('centroids', centroids)
     label = np.zeros(n,dtype=np.int) # track the nearest centroid
     assement = np.zeros(n) # for the assement of our model
 

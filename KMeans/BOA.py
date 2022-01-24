@@ -511,7 +511,6 @@ def csAndSelect(pop, dim, X, mutate, fun, fitness):
                 X_new[i,:] = mutate[i,:]
    return X_new
    
-    
 
 '''主函数 '''
 # 设置参数

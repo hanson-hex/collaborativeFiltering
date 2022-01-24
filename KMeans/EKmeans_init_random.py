@@ -342,11 +342,11 @@ XX[:, 24] = encoder.fit_transform(XX[:, 24])
 # print('k-means最小值:', min)
 # print('k-means平均值：', aver)
 
-max, min, aver = averFitness(kmeans, X=XX, K=4, number = 30, maxIter = 10)
-print('k-means最大值：', max)
-print('k-means最小值:', min)
-print('k-means平均值：', aver)
-
+# max, min, aver = averFitness(kmeans, X=XX, K=4, number = 30, maxIter = 10)
+# print('k-means最大值：', max)
+# print('k-means最小值:', min)
+# print('k-means平均值：', aver)
+# 
 # max, min, aver = averFitness(Kmeans, X=Z, K=28, number = 30, maxIter = 10)
 # print('k-means最大值：', max)
 # print('k-means最小值:', min)

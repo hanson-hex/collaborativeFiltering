@@ -116,7 +116,7 @@ def kmeans(data,k, maxIter):
     print('dbsList', dbsList)
     return centroids, label, dbsList
 
-def kcluster(rows,k,maxIter):  
+def kcluster(rows,k,maxIter):
   m, n = np.shape(rows)
   # 确定每个点的最大值和最小值，给随机数定个范围  
   ranges=[(min([row[i] for row in rows]),max([row[i] for row in rows]))   
