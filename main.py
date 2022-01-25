@@ -57,7 +57,6 @@ class UserBasedCF:
         with open("./train.json","w") as f:
             json.dump(records,f, indent=4)
             print("加载入文件完成...")
-    
 
     def calUserSim(self):  
         # 建立物品-用户的倒排表
@@ -320,7 +319,6 @@ def testKOnKMeans():
      print('Curve', Curve)
 
 
-
 if __name__ == '__main__':
   start = datetime.datetime.now()
   print('start', start)
@@ -329,15 +327,15 @@ if __name__ == '__main__':
 
 #   ucf = UserBasedCF(path, "\t")
 #   W = ucf.UserSimilarity()
-#   ucf.getAllUserPredition(30)
+#   ucf.getAllUserPredition(90)
 #   record = ucf.getRecord()
 
-  # testKOnKMeans()
-  #   ucf.calKOfKMeans()
-  #  ucf.kMeans(10, 100)
+#   testKOnKMeans()
+    # ucf.calKOfKMeans()
+#    ucf.kMeans(10, 100)
   ucf = UserBasedCF(path, "\t")
-  ucf.kMeans(9, 100)
-  ucf.getKmeansPredition(30)
+  ucf.kMeans(11, 100)
+  ucf.getKmeansPredition(70)
   record = ucf.getRecord()
 
     # testKOnKMeans()
