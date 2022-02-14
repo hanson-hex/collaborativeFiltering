@@ -10,7 +10,6 @@ from KMeans.KMeans import *
 # from KMeans.DBI import *
 
 
-
 ### 1M 的数据集 rating是6040位用户对3952部电影的评分数据共计（1000209条）
 
 
@@ -353,4 +352,4 @@ if __name__ == '__main__':
   e = Evalution(records["record"])
   print(e.MAE())
   print(e.RMSE())
-  end = datetime.datetime.now()
+  
