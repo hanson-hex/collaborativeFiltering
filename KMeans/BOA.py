@@ -124,6 +124,56 @@ def BOA(pop, dim, lb, ub, MaxIter, fun):
 
     return GbestScore, GbestPositon, Curve
 
+## 基础蝴蝶算法
+def BOA(pop, dim, lb, ub, MaxIter, fun):
+    p=0.8 #probabibility switch
+    power_exponent=0.1  # a = 0.1
+    sensory_modality=0.01 # c = 0.01
+    
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    fitness = CaculateFitness(X, fun)  # 计算适应度值
+    fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+    X = SortPosition(X, sortIndex)  # 种群排序
+    GbestScore = fitness[0]
+    GbestPositon = np.zeros([1,dim])
+    GbestPositon[0,:] = X[0, :]
+    X_new = X
+    Curve = np.zeros([MaxIter, 1])
+    for t in range(MaxIter):
+        for i in range(pop):
+            FP = sensory_modality*(fitness**power_exponent)
+            # 全局最优
+            if random.random()>p:
+                dis = random.random()*random.random()*GbestPositon - X[i,:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            else:
+                # Find random butterflies in the neighbourhood
+                #epsilon = random.random()
+                Temp = range(pop)
+                JK = random.sample(Temp,pop)
+                dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            #如果更优才更新
+            if(fun(X_new[i,:])<fitness[i]):
+                X[i,:] = X_new[i,:]
+            
+            
+        X = X_new    
+        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+        Curve[t] = GbestScore
+        #更新sensory_modality
+        sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
+
+    return GbestScore, GbestPositon, Curve
+
 
 ## 融入差分进化和精英算法
 def BOA1(pop, dim, lb, ub, MaxIter, fun):
@@ -180,7 +230,6 @@ def BOA1(pop, dim, lb, ub, MaxIter, fun):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
         
-
         V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim)
         X[pop - 1,:] = V[0,:]
 
