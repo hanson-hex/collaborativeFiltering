@@ -124,11 +124,22 @@ def BOA(pop, dim, lb, ub, MaxIter, fun):
 
     return GbestScore, GbestPositon, Curve
 
-## 基础蝴蝶算法
-def BOA(pop, dim, lb, ub, MaxIter, fun):
+
+def levy_flight(Lambda, dim):
+    sigma1 = np.power((math.gamma(1 + Lambda) * np.sin((np.pi * Lambda) / 2)) \
+                      / math.gamma((1 + Lambda) / 2) * np.power(2, (Lambda - 1) / 2), 1 / Lambda)
+    sigma2 = 1
+    u = np.random.normal(0, sigma1, size=dim)
+    v = np.random.normal(0, sigma2, size=dim)
+    step = u / np.power(np.fabs(v), 1 / Lambda)
+    return step
+
+## 基础蝴蝶算法 + levy
+def BOAF(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
+    step_size_cons = 0.01
     
     X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -145,15 +156,19 @@ def BOA(pop, dim, lb, ub, MaxIter, fun):
             # 全局最优
             if random.random()>p:
                 dis = random.random()*random.random()*GbestPositon - X[i,:]
-                Temp = np.matrix(dis*FP[0,:])
+                a = step_size_cons*levy_flight(1.5, dim)
+                print('lvey_fi', levy_flight(1.5, dim))
+                Temp = np.matrix(dis*FP[0,:]*a)
                 X_new[i,:] = X[i,:] + Temp[0,:]
+                # X_new[i,:] = X[i,:] 
             else:
                 # Find random butterflies in the neighbourhood
                 #epsilon = random.random()
                 Temp = range(pop)
                 JK = random.sample(Temp,pop)
                 dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
-                Temp = np.matrix(dis*FP[0,:])
+                a = step_size_cons *levy_flight(1.5, dim)
+                Temp = np.matrix(dis*FP[0,:]*a)
                 X_new[i,:] = X[i,:] + Temp[0,:]
             #如果更优才更新
             if(fun(X_new[i,:])<fitness[i]):
@@ -584,8 +599,11 @@ def averFitness(BOA, function, number):
 # print('最优解：', GbestPositon)
 
 
-# print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 30))
-# print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 30))
+print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 1))
+print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 1))
+
+print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 1))
+print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 1))
 
 # print('线性sphere最优适应度值：', averFitness(BOA4, sphere, 30))
 # print('线性alpine平均最优适应度值：', averFitness(BOA4, alpine, 30))
