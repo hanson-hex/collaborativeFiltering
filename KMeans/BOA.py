@@ -150,7 +150,6 @@ def BOA(pop, dim, lb, ub, MaxIter, fun):
             if(fun(X_new[i,:])<fitness[i]):
                 X[i,:] = X_new[i,:]
             
-            
         X = X_new    
         X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
         fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -304,6 +303,78 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     
+    X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    fitness = CaculateFitness(X, fun)  # 计算适应度值
+    fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+    X = SortPosition(X, sortIndex)  # 种群排序
+    GbestScore = fitness[0]
+    GbestPositon = np.zeros([1,dim])
+    GbestPositon[0,:] = X[0, :]
+    X_new = X
+    Curve = np.zeros([MaxIter, 1])
+    for t in range(MaxIter):
+        a = 2*math.exp(-t/MaxIter)
+        for i in range(pop):
+            FP = sensory_modality*(fitness**power_exponent)
+            # 全局最优
+            if random.random()>p:
+                dis = random.random()*random.random()*GbestPositon - X[i,:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = a*X[i,:] + Temp[0,:]
+            else:
+                # Find random butterflies in the neighbourhood
+                #epsilon = random.random()
+                Temp = range(pop)
+                JK = random.sample(Temp,pop)
+                dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            #如果更优才更新
+            if(fun(X_new[i,:])<fitness[i]):
+                X[i,:] = X_new[i,:]
+            
+            
+        X = X_new
+        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        mutant = getMutate(pop, dim, X, ub, lb)
+        X = csAndSelect(pop, dim, X, mutant, fun, fitness)
+
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim);
+        X[pop - 1,:] = V[0,:];
+
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        Curve[t] = GbestScore
+        #更新sensory_modality
+        sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
+
+    return GbestScore, GbestPositon, Curve
+
+## 指数收敛因子+ 差分精华算法
+def EDEIBOA2(pop, dim, lb, ub, MaxIter, fun):
+    p=0.8 #probabibility switch
+    power_exponent=0.1  # a = 0.1
+    sensory_modality=0.01 # c = 0.01
+    
     X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
@@ -344,7 +415,7 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
 
-        mutant = getMutate(pop, dim, X, ub, lb, i, MaxIter)
+        mutant = getMutate(pop, dim, X, ub, lb)
         X = csAndSelect(pop, dim, X, mutant, fun, fitness)
 
         fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -354,8 +425,8 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
 
-        V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim);
-        X[pop - 1,:] = V[0,:];
+        # V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim);
+        # X[pop - 1,:] = V[0,:];
 
         fitness = CaculateFitness(X, fun)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
@@ -369,6 +440,80 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
 
     return GbestScore, GbestPositon, Curve
+
+## 指数收敛因子+ 差分精华算法
+def EDEIBOA3(pop, dim, lb, ub, MaxIter, fun):
+    p=0.8 #probabibility switch
+    power_exponent=0.1  # a = 0.1
+    sensory_modality=0.01 # c = 0.01
+    
+    # X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    fitness = CaculateFitness(X, fun)  # 计算适应度值
+    fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+    X = SortPosition(X, sortIndex)  # 种群排序
+    GbestScore = fitness[0]
+    GbestPositon = np.zeros([1,dim])
+    GbestPositon[0,:] = X[0, :]
+    X_new = X
+    Curve = np.zeros([MaxIter, 1])
+    for t in range(MaxIter):
+        a = 2*math.exp(-t/MaxIter)
+        for i in range(pop):
+            FP = sensory_modality*(fitness**power_exponent)
+            # 全局最优
+            if random.random()>p:
+                dis = random.random()*random.random()*GbestPositon - X[i,:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = a*X[i,:] + Temp[0,:]
+            else:
+                # Find random butterflies in the neighbourhood
+                #epsilon = random.random()
+                Temp = range(pop)
+                JK = random.sample(Temp,pop)
+                dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            #如果更优才更新
+            if(fun(X_new[i,:])<fitness[i]):
+                X[i,:] = X_new[i,:]
+            
+            
+        X = X_new
+        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        mutant = getMutate1(pop, dim, X, ub, lb, i, MaxIter)
+        X = csAndSelect(pop, dim, X, mutant, fun, fitness)
+
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        # V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim);
+        # X[pop - 1,:] = V[0,:];
+
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        Curve[t] = GbestScore
+        #更新sensory_modality
+        sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
+
+    return GbestScore, GbestPositon, Curve
+
 
 def BOA3(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
@@ -581,10 +726,25 @@ def BOA5(pop, dim, lb, ub, MaxIter, fun):
     return GbestScore, GbestPositon, Curve
 
 
-
-def getMutate(pop, dim, X, ub, lb, i, maxIter):
+def getMutate(pop, dim, X, ub, lb):
     mutant = np.zeros([pop, dim])
-    a = 1 - 500/(500)
+    F = 0.2 # 变异因子
+    for i in range(pop):
+        r0, r1, r2 = 0, 0, 0
+        while r0 == r1 or r1 == r2 or r0 == r2 or r0 == i:
+            r0 = random.randint(0, pop-1)
+            r1 = random.randint(0, pop-1)
+            r2 = random.randint(0, pop-1)
+        mutant[i,:]= X[r0,:] + (X[r1,:] - X[r2,:]) * F
+        for t in range(dim):
+            if mutant[i, t] >= ub[t] or mutant[i, t] <= lb[t]:
+                mutant[i, t] = random.uniform(lb[t], ub[t])
+    return mutant
+
+
+def getMutate1(pop, dim, X, ub, lb, i, maxIter):
+    mutant = np.zeros([pop, dim])
+    a = 1 - maxIter/(maxIter + 1 - i)
     F = 0.2*(math.e)**a # 变异因子
     # F = 0.2 # 变异因子
     for i in range(pop):
@@ -639,13 +799,17 @@ def averFitness(BOA, function, number):
 
 # print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 10))
 # print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 10))
-GbestScore1, GbestPositon1, Curve1 = BOA(pop, dim, lb, ub, MaxIter, sphere)
+GbestScore0, GbestPositon0, Curve0 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
+print('0最优适应度值：', GbestScore0)
+print('0最优解：', GbestPositon0)
+
+GbestScore1, GbestPositon1, Curve1 = EDEIBOA2(pop, dim, lb, ub, MaxIter, sphere)
 print('1最优适应度值：', GbestScore1)
 print('1最优解：', GbestPositon1)
 
 # print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 10))
 # print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 10))
-GbestScore2, GbestPositon2, Curve2 = BOAF(pop, dim, lb, ub, MaxIter, sphere)
+GbestScore2, GbestPositon2, Curve2 = EDEIBOA3(pop, dim, lb, ub, MaxIter, sphere)
 print('2最优适应度值：', GbestScore2)
 print('2最优解：', GbestPositon2)
 
@@ -672,9 +836,9 @@ print('2最优解：', GbestPositon2)
 # print('最优适应度值：', GbestScore)
 # print('最优解：', GbestPositon)
 
-# GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
-# print('2最优适应度值：', GbestScore2)
-# print('2最优解：', GbestPositon2)
+GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
+print('2最优适应度值：', GbestScore2)
+print('2最优解：', GbestPositon2)
 
 # GbestScore3, GbestPositon3, Curve3 = BOA3(pop, dim, lb, ub, MaxIter, sphere)
 # print('3最优适应度值：', GbestScore3)
