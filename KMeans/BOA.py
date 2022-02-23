@@ -303,7 +303,8 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     
-    X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    # X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
@@ -333,7 +334,6 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
             if(fun(X_new[i,:])<fitness[i]):
                 X[i,:] = X_new[i,:]
             
-            
         X = X_new
         X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
         fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -343,7 +343,8 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
 
-        mutant = getMutate(pop, dim, X, ub, lb)
+        # mutant = getMutate(pop, dim, X, ub, lb)
+        mutant = getMutate1(pop, dim, X, ub, lb, i, MaxIter)
         X = csAndSelect(pop, dim, X, mutant, fun, fitness)
 
         fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -790,28 +791,28 @@ def averFitness(BOA, function, number):
     return s / number
 
 
-# GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, sphere)
+# GbestScore, GbestPositon, Curve = BOAF(pop, dim, lb, ub, MaxIter, sphere)
 
 
 # print('最优适应度值：', GbestScore)
 # print('最优解：', GbestPositon)
 
 
-# print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 10))
-# print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 10))
-GbestScore0, GbestPositon0, Curve0 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
-print('0最优适应度值：', GbestScore0)
-print('0最优解：', GbestPositon0)
+print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 30))
+print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 30))
+# GbestScore0, GbestPositon0, Curve0 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
+# print('0最优适应度值：', GbestScore0)
+# print('0最优解：', GbestPositon0)
 
-GbestScore1, GbestPositon1, Curve1 = EDEIBOA2(pop, dim, lb, ub, MaxIter, sphere)
-print('1最优适应度值：', GbestScore1)
-print('1最优解：', GbestPositon1)
+# GbestScore1, GbestPositon1, Curve1 = EDEIBOA2(pop, dim, lb, ub, MaxIter, sphere)
+# print('1最优适应度值：', GbestScore1)
+# print('1最优解：', GbestPositon1)
 
 # print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 10))
 # print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 10))
-GbestScore2, GbestPositon2, Curve2 = EDEIBOA3(pop, dim, lb, ub, MaxIter, sphere)
-print('2最优适应度值：', GbestScore2)
-print('2最优解：', GbestPositon2)
+# GbestScore2, GbestPositon2, Curve2 = EDEIBOA3(pop, dim, lb, ub, MaxIter, sphere)
+# print('2最优适应度值：', GbestScore2)
+# print('2最优解：', GbestPositon2)
 
 # print('线性sphere最优适应度值：', averFitness(BOA4, sphere, 30))
 # print('线性alpine平均最优适应度值：', averFitness(BOA4, alpine, 30))
