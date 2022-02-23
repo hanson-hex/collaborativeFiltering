@@ -23,12 +23,53 @@ def alpine(X):
 
 ''' 种群初始化函数 '''
 
+def initial1(pop, dim, ub, lb, fun):
+    # X = np.zeros([pop, dim])
+    # for i in range(pop):
+    #     for j in range(dim):
+    #         X[i, j] = random.random() * (ub[j] - lb[j]) + lb[j]
+
+    # return X, lb, ub
+    X = np.zeros([pop, dim])
+    XAll = np.zeros([2*pop,dim])
+    for i in range(pop):
+        for j in range(dim):
+            XAll[i, j] = random.random()*(ub[j] - lb[j]) + lb[j]
+            XAll[i+pop,j] = (ub[j]+lb[j]) - XAll[i, j] #求反向种群
+            if XAll[i,j]>ub[j]:
+                XAll[i, j] = ub[j]
+            if XAll[i,j]<lb[j]:
+                XAll[i, j] = lb[j]
+            if XAll[i + pop,j]>ub[j]:
+                XAll[i+pop, j] = ub[j]
+            if XAll[i+pop,j]<lb[j]:
+                XAll[i+pop, j] = lb[j]
+        fitness = fun(XAll[i,:])
+        fitnessBack = fun(XAll[i+pop,:])
+        if(fitnessBack<fitness): #反向解更好的给原始解
+            XAll[i,:] = XAll[i+pop,:]
+    
+    X = XAll[0:pop,:]
+    #获取精英边界
+    lbT = np.min(X,0)
+    ubT = np.max(X,0)
+    
+    for i in range(X.shape[0]):
+        X[i,:] = random.random()*(lbT + ubT) - X[i,:]
+        for j in range(dim):
+            if X[i,j]>ub[j]:
+                X[i, j] = ub[j]
+            if X[i,j]<lb[j]:
+                X[i, j] = lb[j]  
+    return X,lb,ub
+
+''' 种群初始化函数 '''
+
 def initial(pop, dim, ub, lb):
     X = np.zeros([pop, dim])
     for i in range(pop):
         for j in range(dim):
             X[i, j] = random.random() * (ub[j] - lb[j]) + lb[j]
-
     return X, lb, ub
 
 
@@ -141,10 +182,11 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
     sensory_modality=0.01 # c = 0.01
     step_size_cons = 0.01
     
-    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
+
     GbestScore = fitness[0]
     GbestPositon = np.zeros([1,dim])
     GbestPositon[0,:] = X[0, :]
@@ -156,24 +198,19 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
             # 全局最优
             if random.random()>p:
                 dis = random.random()*random.random()*GbestPositon - X[i,:]
-                a = step_size_cons*levy_flight(1.5, dim)
-                print('lvey_fi', levy_flight(1.5, dim))
-                Temp = np.matrix(dis*FP[0,:]*a)
+                Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
-                # X_new[i,:] = X[i,:] 
             else:
                 # Find random butterflies in the neighbourhood
                 #epsilon = random.random()
                 Temp = range(pop)
                 JK = random.sample(Temp,pop)
                 dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
-                a = step_size_cons *levy_flight(1.5, dim)
-                Temp = np.matrix(dis*FP[0,:]*a)
+                Temp = np.matrix(dis*FP[0,:])
                 X_new[i,:] = X[i,:] + Temp[0,:]
             #如果更优才更新
             if(fun(X_new[i,:])<fitness[i]):
                 X[i,:] = X_new[i,:]
-            
             
         X = X_new    
         X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
@@ -307,7 +344,7 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
 
-        mutant = getMutate(pop, dim, X, ub, lb)
+        mutant = getMutate(pop, dim, X, ub, lb, i, MaxIter)
         X = csAndSelect(pop, dim, X, mutant, fun, fitness)
 
         fitness = CaculateFitness(X, fun)  # 计算适应度值
@@ -316,10 +353,9 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
         if fitness[0] <= GbestScore:  # 更新全局最优
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
-        
 
-        V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim)
-        X[pop - 1,:] = V[0,:]
+        V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim);
+        X[pop - 1,:] = V[0,:];
 
         fitness = CaculateFitness(X, fun)  # 计算适应度值
         fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
@@ -546,9 +582,11 @@ def BOA5(pop, dim, lb, ub, MaxIter, fun):
 
 
 
-def getMutate(pop, dim, X, ub, lb):
+def getMutate(pop, dim, X, ub, lb, i, maxIter):
     mutant = np.zeros([pop, dim])
-    F = 0.2 # 变异因子
+    a = 1 - 500/(500)
+    F = 0.2*(math.e)**a # 变异因子
+    # F = 0.2 # 变异因子
     for i in range(pop):
         r0, r1, r2 = 0, 0, 0
         while r0 == r1 or r1 == r2 or r0 == r2 or r0 == i:
@@ -599,11 +637,17 @@ def averFitness(BOA, function, number):
 # print('最优解：', GbestPositon)
 
 
-print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 1))
-print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 1))
+# print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, 10))
+# print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, 10))
+GbestScore1, GbestPositon1, Curve1 = BOA(pop, dim, lb, ub, MaxIter, sphere)
+print('1最优适应度值：', GbestScore1)
+print('1最优解：', GbestPositon1)
 
-print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 1))
-print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 1))
+# print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 10))
+# print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 10))
+GbestScore2, GbestPositon2, Curve2 = BOAF(pop, dim, lb, ub, MaxIter, sphere)
+print('2最优适应度值：', GbestScore2)
+print('2最优解：', GbestPositon2)
 
 # print('线性sphere最优适应度值：', averFitness(BOA4, sphere, 30))
 # print('线性alpine平均最优适应度值：', averFitness(BOA4, alpine, 30))
@@ -624,13 +668,13 @@ print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 1))
 # print('1最优适应度值：', GbestScore1)
 # print('1最优解：', GbestPositon1)
 
-GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, sphere)
-print('最优适应度值：', GbestScore)
-print('最优解：', GbestPositon)
+# GbestScore, GbestPositon, Curve = BOA(pop, dim, lb, ub, MaxIter, sphere)
+# print('最优适应度值：', GbestScore)
+# print('最优解：', GbestPositon)
 
-GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
-print('2最优适应度值：', GbestScore2)
-print('2最优解：', GbestPositon2)
+# GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
+# print('2最优适应度值：', GbestScore2)
+# print('2最优解：', GbestPositon2)
 
 # GbestScore3, GbestPositon3, Curve3 = BOA3(pop, dim, lb, ub, MaxIter, sphere)
 # print('3最优适应度值：', GbestScore3)
@@ -652,9 +696,9 @@ print('2最优解：', GbestPositon2)
 
 # 绘制适应度曲线
 plt.figure(1)
-plt.plot(Curve, 'r-', linewidth=2)
+plt.plot(Curve1, 'r-', linewidth=2)
 # plt.plot(Curve1, 'g-', linewidth=2)
-plt.plot(Curve2, 'o-', linewidth=2)
+plt.plot(Curve2, 'g-', linewidth=2)
 # plt.plot(Curve3, 'y-', linewidth=2)
 # plt.plot(Curve35, 'c-', linewidth=2)
 # plt.plot(Curve4, 'b-', linewidth=2)
