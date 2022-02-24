@@ -303,7 +303,8 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     
-    X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    # X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
@@ -343,7 +344,8 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
             GbestScore = fitness[0]
             GbestPositon[0,:] = X[0, :]
 
-        mutant = getMutate(pop, dim, X, ub, lb)
+        # mutant = getMutate(pop, dim, X, ub, lb)
+        mutant = getMutate1(pop, dim, X, ub, lb, i, MaxIter)
         X = csAndSelect(pop, dim, X, mutant, fun, fitness)
 
         fitness = CaculateFitness(X, fun)  # 计算适应度值
