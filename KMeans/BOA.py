@@ -12,9 +12,35 @@ def sphere(X):
     return output
 
 def rastringin(X):
-    output = sum(np.square(X)) - sum(10*np.cos(2*np.pi*X)) + 10
+    Y = X[0: len(X)//2]
+    Z = X[len(X)//2: len(X)-1]
+    A = 10
+    output = 2*A + Y**2 - A*np.cos(2*np.pi*Y) + Z**2 - A*np.cos(2*np.pi*Z)
+    # output = sum(np.square(Y)) - sum(10*np.cos(2*np.pi*Z)) + 10
     return output
- 
+
+def beale(X):
+    Y = X[0: len(X)//2]
+    Z = X[len(X)//2: len(X)-1]
+    output = np.power(1.5 - Y + Z*Y, 2) + np.power(2.25 - Y + Y*(Z**2), 2) + np.power(2.625 - Y + Y*(Z**3), 2)
+    return output
+
+def Griewank(X):
+    d = len(X)
+    i = np.arange(1, d+1)
+    return 1 + np.sum(X ** 2) / 4000 - np.prod(np.cos(X / np.sqrt(i)))
+
+def ackley(X):
+    Y = X[0: len(X)//2]
+    Z = X[len(X)//2: len(X)-1]
+    output = - 20 * np.exp(-0.2 * np.sqrt(0.5*(Y**2+Z**2))) - np.exp(0.5*(np.cos(2*np.pi*Y)+np.cos(2 * np.pi * Z))) + 20 + np.exp(1)
+    return output
+
+def booth(X):
+    Y = X[0: len(X)//2]
+    Z = X[len(X)//2:len(X)-1]
+    output = np.power(Y + 2*Z - 7, 2) + np.power(2*Y+Z-5, 2)
+    return output
 
 def alpine(X):
     output = np.sum(np.abs(0.1*X + X*np.sin(X)))
@@ -90,6 +116,7 @@ def CaculateFitness(X, fun):
     pop = X.shape[0]
     fitness = np.zeros([pop, 1])
     for i in range(pop):
+        # fitness[i] = fun(X[i, :][0:dim//2], X[i, :][dim//2:dim])
         fitness[i] = fun(X[i, :])
     return fitness
 
@@ -192,13 +219,14 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
     X_new = X
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
+        a = 2*math.exp(-t/MaxIter)
         for i in range(pop):
             FP = sensory_modality*(fitness**power_exponent)
             # 全局最优
             if random.random()>p:
                 dis = random.random()*random.random()*GbestPositon - X[i,:]
                 Temp = np.matrix(dis*FP[0,:])
-                X_new[i,:] = X[i,:] + Temp[0,:]
+                X_new[i,:] = a*X[i,:] + Temp[0,:]
             else:
                 # Find random butterflies in the neighbourhood
                 #epsilon = random.random()
@@ -224,7 +252,6 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
 
     return GbestScore, GbestPositon, Curve
-
 
 ## 融入差分进化和精英算法
 def BOA1(pop, dim, lb, ub, MaxIter, fun):
@@ -782,6 +809,7 @@ MaxIter = 500 # 最大迭代次数
 dim = 30 # 维度
 lb = -100 * np.ones([dim, 1])  # 下边界
 ub = 100 * np.ones([dim, 1])  # 上边界
+num = 1
 
 def averFitness(BOA, function, number):
     s = 0
@@ -798,8 +826,20 @@ def averFitness(BOA, function, number):
 # print('最优解：', GbestPositon)
 
 
-print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, 30))
-print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 30))
+# print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, num))
+# print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, num))
+print('普通rastringin平均最优适应度值：', averFitness(BOA, rastringin, num))
+# print('普通Griewank平均最优适应度值：', averFitness(BOA, Griewank, num))
+# print('普通ackley平均最优适应度值：', averFitness(BOA, ackley, num))
+# print('普通booth平均最优适应度值：', averFitness(BOA, booth, num))
+
+# print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, num))
+# print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, num))
+# print('普通rastringin平均最优适应度值：', averFitness(BOAF, rastringin, num))
+# print('普通Griewank平均最优适应度值：', averFitness(BOAF, Griewank, num))
+# print('普通ackley平均最优适应度值：', averFitness(BOAF, ackley, num))
+# print('普通booth平均最优适应度值：', averFitness(BOAF, booth, num))
+
 # GbestScore0, GbestPositon0, Curve0 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
 # print('0最优适应度值：', GbestScore0)
 # print('0最优解：', GbestPositon0)
@@ -837,9 +877,9 @@ print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, 30))
 # print('最优适应度值：', GbestScore)
 # print('最优解：', GbestPositon)
 
-GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
-print('2最优适应度值：', GbestScore2)
-print('2最优解：', GbestPositon2)
+# GbestScore2, GbestPositon2, Curve2 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
+# print('2最优适应度值：', GbestScore2)
+# print('2最优解：', GbestPositon2)
 
 # GbestScore3, GbestPositon3, Curve3 = BOA3(pop, dim, lb, ub, MaxIter, sphere)
 # print('3最优适应度值：', GbestScore3)
@@ -860,19 +900,19 @@ print('2最优解：', GbestPositon2)
 # print('最优解：', GbestPositon5)
 
 # 绘制适应度曲线
-plt.figure(1)
-plt.plot(Curve1, 'r-', linewidth=2)
-# plt.plot(Curve1, 'g-', linewidth=2)
-plt.plot(Curve2, 'g-', linewidth=2)
-# plt.plot(Curve3, 'y-', linewidth=2)
-# plt.plot(Curve35, 'c-', linewidth=2)
-# plt.plot(Curve4, 'b-', linewidth=2)
-plt.xlabel('Iteration', fontsize='medium')
-plt.ylabel("Fitness", fontsize='medium')
-plt.legend(["BOA", "IBOA"])
-plt.grid()
-plt.title('BOA', fontsize='large')
-plt.show()
+# plt.figure(1)
+# plt.plot(Curve1, 'r-', linewidth=2)
+# # plt.plot(Curve1, 'g-', linewidth=2)
+# plt.plot(Curve2, 'g-', linewidth=2)
+# # plt.plot(Curve3, 'y-', linewidth=2)
+# # plt.plot(Curve35, 'c-', linewidth=2)
+# # plt.plot(Curve4, 'b-', linewidth=2)
+# plt.xlabel('Iteration', fontsize='medium')
+# plt.ylabel("Fitness", fontsize='medium')
+# plt.legend(["BOA", "IBOA"])
+# plt.grid()
+# plt.title('BOA', fontsize='large')
+# plt.show()
 
 # # 绘制搜索空间
 # fig = plt.figure(2)
