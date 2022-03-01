@@ -15,13 +15,24 @@ def rastringin(X):
     Y = X[0: len(X)//2]
     Z = X[len(X)//2: len(X)-1]
     A = 10
-    output = 2*A + Y**2 - A*np.cos(2*np.pi*Y) + Z**2 - A*np.cos(2*np.pi*Z)
-    # output = sum(np.square(Y)) - sum(10*np.cos(2*np.pi*Z)) + 10
+    d = len(X) - 1
+    res = 10 * d + np.sum(X**2 - 10*np.cos(2*np.pi*X))
+    return res
+    output = sum(np.square(Y)) - sum(10*np.cos(2*np.pi*Z)) + 10
+    return output
+
+def Step(X):
+    output = np.sum(int(X + 0.5)**2)
+    return output
+
+def Schwefel(X):
+    d = len(X) - 1
+    output = 418.9829*d - np.sum(X*np.sin(np.sqrt(np.abs(X))))
     return output
 
 def beale(X):
     Y = X[0: len(X)//2]
-    Z = X[len(X)//2: len(X)-1]
+    Z = X[len(X)//2: len(X)]
     output = np.power(1.5 - Y + Z*Y, 2) + np.power(2.25 - Y + Y*(Z**2), 2) + np.power(2.625 - Y + Y*(Z**3), 2)
     return output
 
@@ -31,15 +42,13 @@ def Griewank(X):
     return 1 + np.sum(X ** 2) / 4000 - np.prod(np.cos(X / np.sqrt(i)))
 
 def ackley(X):
-    Y = X[0: len(X)//2]
-    Z = X[len(X)//2: len(X)-1]
-    output = - 20 * np.exp(-0.2 * np.sqrt(0.5*(Y**2+Z**2))) - np.exp(0.5*(np.cos(2*np.pi*Y)+np.cos(2 * np.pi * Z))) + 20 + np.exp(1)
+    output = - 20 * np.exp(-0.2 * np.sqrt(np.mean(X**2))) - np.exp(np.mean(np.cos(2*np.pi*X)+np.cos(2 * np.pi * X))) + 20 + np.exp(1)
     return output
 
 def booth(X):
     Y = X[0: len(X)//2]
-    Z = X[len(X)//2:len(X)-1]
-    output = np.power(Y + 2*Z - 7, 2) + np.power(2*Y+Z-5, 2)
+    Z = X[len(X)//2:len(X)]
+    output = np.power(sum(Y + 2*Z) - 7, 2) + np.power(sum(2*Y+Z)-5, 2)
     return output
 
 def alpine(X):
@@ -50,12 +59,6 @@ def alpine(X):
 ''' 种群初始化函数 '''
 
 def initial1(pop, dim, ub, lb, fun):
-    # X = np.zeros([pop, dim])
-    # for i in range(pop):
-    #     for j in range(dim):
-    #         X[i, j] = random.random() * (ub[j] - lb[j]) + lb[j]
-
-    # return X, lb, ub
     X = np.zeros([pop, dim])
     XAll = np.zeros([2*pop,dim])
     for i in range(pop):
@@ -206,27 +209,24 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
-    step_size_cons = 0.01
     
-    X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
-
     GbestScore = fitness[0]
     GbestPositon = np.zeros([1,dim])
     GbestPositon[0,:] = X[0, :]
     X_new = X
     Curve = np.zeros([MaxIter, 1])
     for t in range(MaxIter):
-        a = 2*math.exp(-t/MaxIter)
         for i in range(pop):
             FP = sensory_modality*(fitness**power_exponent)
             # 全局最优
             if random.random()>p:
                 dis = random.random()*random.random()*GbestPositon - X[i,:]
                 Temp = np.matrix(dis*FP[0,:])
-                X_new[i,:] = a*X[i,:] + Temp[0,:]
+                X_new[i,:] = X[i,:] + Temp[0,:]
             else:
                 # Find random butterflies in the neighbourhood
                 #epsilon = random.random()
@@ -250,7 +250,6 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
         Curve[t] = GbestScore
         #更新sensory_modality
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
-
     return GbestScore, GbestPositon, Curve
 
 ## 融入差分进化和精英算法
@@ -330,8 +329,8 @@ def EDEIBOA(pop, dim, lb, ub, MaxIter, fun):
     power_exponent=0.1  # a = 0.1
     sensory_modality=0.01 # c = 0.01
     
-    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     # X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
     fitness = CaculateFitness(X, fun)  # 计算适应度值
     fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
     X = SortPosition(X, sortIndex)  # 种群排序
@@ -809,7 +808,7 @@ MaxIter = 500 # 最大迭代次数
 dim = 30 # 维度
 lb = -100 * np.ones([dim, 1])  # 下边界
 ub = 100 * np.ones([dim, 1])  # 上边界
-num = 1
+num = 30
 
 def averFitness(BOA, function, number):
     s = 0
@@ -828,18 +827,30 @@ def averFitness(BOA, function, number):
 
 # print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, num))
 # print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, num))
-print('普通rastringin平均最优适应度值：', averFitness(BOA, rastringin, num))
+# print('普通rastringin平均最优适应度值：', averFitness(BOA, rastringin, num))
+# print('普通Schwefel平均最优适应度值：', averFitness(BOA, Schwefel, num))
+# # print('普通step平均最优适应度值：', averFitness(BOA, Step, num))
+# print('普通Griewank平均最优适应度值：', averFitness(BOA, Griewank, num))
+# print('普通ackley平均最优适应度值：', averFitness(BOA, ackley, num))
+# print('普通booth平均最优适应度值：', averFitness(BOA, booth, num))
+# # print('普通beale平均最优适应度值：', averFitness(BOA, beale, num))
+
+# print('普通sphere平均最优适应度值：', averFitness(BOA, sphere, num))
+# print('普通alpine平均最优适应度值：', averFitness(BOA, alpine, num))
+# print('普通rastringin平均最优适应度值：', averFitness(BOA, rastringin, num))
+# print('普通Schwefel平均最优适应度值：', averFitness(BOA, Schwefel, num))
+# # print('普通step平均最优适应度值：', averFitness(BOA, Step, num))
 # print('普通Griewank平均最优适应度值：', averFitness(BOA, Griewank, num))
 # print('普通ackley平均最优适应度值：', averFitness(BOA, ackley, num))
 # print('普通booth平均最优适应度值：', averFitness(BOA, booth, num))
 
-# print('普通sphere平均最优适应度值：', averFitness(BOAF, sphere, num))
-# print('普通alpine平均最优适应度值：', averFitness(BOAF, alpine, num))
-# print('普通rastringin平均最优适应度值：', averFitness(BOAF, rastringin, num))
-# print('普通Griewank平均最优适应度值：', averFitness(BOAF, Griewank, num))
-# print('普通ackley平均最优适应度值：', averFitness(BOAF, ackley, num))
-# print('普通booth平均最优适应度值：', averFitness(BOAF, booth, num))
 
+# print('普通sphere BOA平均最优适应度值：', averFitness(BOA, sphere, 10))
+# print('普通sphere LBOA平均最优适应度值：', averFitness(LBOA, sphere, 10))
+# print('普通sphere EBOA平均最优适应度值：', averFitness(EBOA, sphere, 10))
+print('普通sphere BOAF平均最优适应度值：', averFitness(BOAF, sphere, 1))
+
+# print('普通beale平均最优适应度值：', averFitness(BOA, beale, num))
 # GbestScore0, GbestPositon0, Curve0 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
 # print('0最优适应度值：', GbestScore0)
 # print('0最优解：', GbestPositon0)
