@@ -252,6 +252,108 @@ def BOAF(pop, dim, lb, ub, MaxIter, fun):
         sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
     return GbestScore, GbestPositon, Curve
 
+def ESBOA(pop, dim, lb, ub, MaxIter, fun):
+    p=0.8 #probabibility switch
+    power_exponent=0.1  # a = 0.1
+    sensory_modality=0.01 # c = 0.01
+    
+    X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    fitness = CaculateFitness(X, fun)  # 计算适应度值
+    fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+    X = SortPosition(X, sortIndex)  # 种群排序
+    GbestScore = fitness[0]
+    GbestPositon = np.zeros([1,dim])
+    GbestPositon[0,:] = X[0, :]
+    X_new = X
+    Curve = np.zeros([MaxIter, 1])
+    for t in range(MaxIter):
+        for i in range(pop):
+            FP = sensory_modality*(fitness**power_exponent)
+            # 全局最优
+            if random.random()>p:
+                dis = random.random()*random.random()*GbestPositon - X[i,:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            else:
+                # Find random butterflies in the neighbourhood
+                #epsilon = random.random()
+                Temp = range(pop)
+                JK = random.sample(Temp,pop)
+                dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            #如果更优才更新
+            if(fun(X_new[i,:])<fitness[i]):
+                X[i,:] = X_new[i,:]
+            
+        X = X_new    
+        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+        Curve[t] = GbestScore
+        #更新sensory_modality
+        sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
+    return GbestScore, GbestPositon, Curve
+
+
+def ESECBOA(pop, dim, lb, ub, MaxIter, fun):
+    p=0.8 #probabibility switch
+    power_exponent=0.1  # a = 0.1
+    sensory_modality=0.01 # c = 0.01
+    
+    X, lb, ub = initial(pop, dim, ub, lb)  # 初始化种群
+    # X, lb, ub = initial1(pop, dim, ub, lb, fun)  # 初始化种群
+    fitness = CaculateFitness(X, fun)  # 计算适应度值
+    fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+    X = SortPosition(X, sortIndex)  # 种群排序
+    GbestScore = fitness[0]
+    GbestPositon = np.zeros([1,dim])
+    GbestPositon[0,:] = X[0, :]
+    X_new = X
+    Curve = np.zeros([MaxIter, 1])
+    for t in range(MaxIter):
+        a = 2*math.exp(-t/MaxIter)
+        for i in range(pop):
+            FP = sensory_modality*(fitness**power_exponent)
+            # 全局最优
+            if random.random()>p:
+                dis = random.random()*random.random()*GbestPositon - X[i,:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = a*X[i,:] + Temp[0,:]
+            else:
+                # Find random butterflies in the neighbourhood
+                #epsilon = random.random()
+                Temp = range(pop)
+                JK = random.sample(Temp,pop)
+                dis=random.random()*random.random()*X[JK[0],:]-X[JK[1],:]
+                Temp = np.matrix(dis*FP[0,:])
+                X_new[i,:] = X[i,:] + Temp[0,:]
+            #如果更优才更新
+                V = GbestPositon[0, :] + 0.001*np.random.randn(1, dim)
+                X[pop - 1,:] = V[0,:]
+            if(fun(X_new[i,:])<fitness[i]):
+                X[i,:] = X_new[i,:]
+            
+            
+        X = X_new
+        X = BorderCheck(X, ub, lb, pop, dim)  # 边界检测
+        fitness = CaculateFitness(X, fun)  # 计算适应度值
+        fitness, sortIndex = SortFitness(fitness)  # 对适应度值排序
+        X = SortPosition(X, sortIndex)  # 种群排序
+        if fitness[0] <= GbestScore:  # 更新全局最优
+            GbestScore = fitness[0]
+            GbestPositon[0,:] = X[0, :]
+
+        Curve[t] = GbestScore
+        #更新sensory_modality
+        sensory_modality = sensory_modality_NEW(sensory_modality, t+1)
+
+    return GbestScore, GbestPositon, Curve
+
 ## 融入差分进化和精英算法
 def BOA1(pop, dim, lb, ub, MaxIter, fun):
     p=0.8 #probabibility switch
@@ -808,7 +910,7 @@ MaxIter = 500 # 最大迭代次数
 dim = 30 # 维度
 lb = -100 * np.ones([dim, 1])  # 下边界
 ub = 100 * np.ones([dim, 1])  # 上边界
-num = 30
+num = 1
 
 def averFitness(BOA, function, number):
     s = 0
@@ -847,8 +949,21 @@ def averFitness(BOA, function, number):
 
 # print('普通sphere BOA平均最优适应度值：', averFitness(BOA, sphere, 10))
 # print('普通sphere LBOA平均最优适应度值：', averFitness(LBOA, sphere, 10))
-# print('普通sphere EBOA平均最优适应度值：', averFitness(EBOA, sphere, 10))
-print('普通sphere BOAF平均最优适应度值：', averFitness(BOAF, sphere, 1))
+print('普通sphere EBOA平均最优适应度值：', averFitness(EBOA, sphere, 1))
+# print('普通sphere ESBOA平均最优适应度值：', averFitness(ESBOA, sphere, 10))
+print('普通sphere ESECBOAF平均最优适应度值：', averFitness(ESECBOA, sphere, 1))
+
+# print('Griewank BOA平均最优适应度值：', averFitness(BOA, Griewank, 10))
+# print('Griewank LBOA平均最优适应度值：', averFitness(LBOA, Griewank, 10))
+# print('Griewank EBOA平均最优适应度值：', averFitness(EBOA, Griewank, 10))
+# print('Griewank ESBOA平均最优适应度值：', averFitness(ESBOA, Griewank, 10))
+# print('Griewank ESECBOAF平均最优适应度值：', averFitness(ESECBOA, Griewank, 10))
+
+# print('alpine BOA平均最优适应度值：', averFitness(BOA, alpine, 10))
+# print('alpine LBOA平均最优适应度值：', averFitness(LBOA, alpine, 10))
+print('alpine EBOA平均最优适应度值：', averFitness(EBOA, alpine, 1))
+# print('alpine ESBOA平均最优适应度值：', averFitness(ESBOA, alpine, 10))
+print('alpinee ESECBOA平均最优适应度值：', averFitness(ESECBOA, alpine, 1))
 
 # print('普通beale平均最优适应度值：', averFitness(BOA, beale, num))
 # GbestScore0, GbestPositon0, Curve0 = EDEIBOA(pop, dim, lb, ub, MaxIter, sphere)
