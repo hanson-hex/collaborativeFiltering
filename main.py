@@ -9,9 +9,7 @@ import imp
 from KMeans.KMeans import *
 # from KMeans.DBI import *
 
-
-### 1M 的数据集 rating是6040位用户对3952部电影的评分数据共计（1000209条）
-
+### 1M 的数据集 rating是6040位用户对3952部电影的评分数据共计（1000209条 ）
 
 class UserBasedCF:
     def __init__(self, path, splitToken):
@@ -248,17 +246,6 @@ class UserBasedCF:
 
     def calKOfKMeans(self):
         pass
-    #   data = self.df.values
-    #   data = {
-    #         "data": data.tolist()
-    #   }
-    #   with open("./data.json","w") as f:
-    #     json.dump(data,f, indent=4)
-    #     print("data 保存成功")
-    #   GbestScore, GbestPositon, Curve = BOAK(50, 8, 0, 1, 500, data)
-    #   print('GBestScore, ', GbestScore)
-    #   print('GBestPostioon', GbestPositon)
-    #   print('Curve', Curve)
 
     #给用户user推荐，前K个相关用户
     def Recommend(self,u,K=3,N=10):
@@ -319,9 +306,10 @@ def testKOnKMeans():
 
 
 if __name__ == '__main__':
+  print("何")
   start = datetime.datetime.now()
-  print('start', start)
-#   path = os.path.join('data', 'ratings.dat')
+
+  #path = os.path.join('data', 'ratings.dat')
   path = os.path.join('ml-100k', 'u.data')
 
 #   ucf = UserBasedCF(path, "\t")
@@ -332,24 +320,24 @@ if __name__ == '__main__':
 #   testKOnKMeans()
     # ucf.calKOfKMeans()
 #    ucf.kMeans(10, 100)
-  ucf = UserBasedCF(path, "\t")
-  ucf.kMeans(11, 100)
-  ucf.getKmeansPredition(70)
-  record = ucf.getRecord()
+#   ucf = UserBasedCF(path, "\t") 
+#   ucf.kMeans(11, 100)
+#   ucf.getKmeansPredition(70)
+#   record = ucf.getRecord()
 
-    # testKOnKMeans()
-  records = {
-      "record": ucf.records
-  }
+#     # testKOnKMeans()
+#   records = {
+#       "record": ucf.records
+#   }
 
-  with open("./record.json","w") as f:
-      json.dump(records,f, indent=4)
-      print("加载入文件完成...")
+#   with open("./record.json","w") as f:
+#       json.dump(records,f, indent=4)
+#       print("加载入文件完成...")
 
-  #   with open("./record.json",'r') as load_f:
-  #   records = json.load(load_f)
+#   #   with open("./record.json",'r') as load_f:
+#   #   records = json.load(load_f)
 
-  e = Evalution(records["record"])
-  print(e.MAE())
-  print(e.RMSE())
+#   e = Evalution(records["record"])
+#   print(e.MAE())
+#   print(e.RMSE())
   

@@ -66,6 +66,7 @@ def Kmeans(D,K,maxIter):
 
     return U, C, maxIter-curIter, cluster, indexCluster
 
+
 # U, C1, iter, cluster = Kmeans(data, 3,10)
 # print(dbs(data, C1))
 # 
